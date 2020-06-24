@@ -9,15 +9,14 @@ class Loader1C
 
     public function __construct()
     {
-        global $USER;
-        if (!$USER->IsAdmin()) {
-            $this->getError(0);
-            exit;
-        }
-
         file_put_contents($this->logFile, '');
         file_put_contents($this->ordersFile, '');
         file_put_contents($this->infoFile, '');
+        global $USER;
+        if (!$USER->IsAdmin()) {
+            $this->add2log($this->getError(0));
+            exit;
+        }
         $serverName = $_SERVER['SERVER_NAME'];
         $this->url = "http://$serverName/local/admin/1c_exchange.php";
         $this->type = $_GET['type'];
