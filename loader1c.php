@@ -9,11 +9,6 @@ class Loader1C
 
     public function __construct()
     {
-        global $USER;
-        if (!$USER->IsAdmin()) {
-            $this->add2log($this->getError(0));
-            exit;
-        }
         file_put_contents($this->logFile, '');
         file_put_contents($this->ordersFile, '');
         file_put_contents($this->infoFile, '');
@@ -135,7 +130,7 @@ class Loader1C
     {
         switch ($num) {
             case 0:
-                $error = "Ошибка #$num. Надо быть админом.";
+                $error = "";
                 break;
             case 1:
                 $error = "Ошибка #$num. Файл для импорта не найден.";
