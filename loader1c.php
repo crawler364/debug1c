@@ -6,6 +6,8 @@ class Loader1C
     private $logFile = 'log.txt';
     private $ordersFile = 'orders.xml';
     private $infoFile = 'info.xml';
+    private $login = '';
+    private $password = '';
 
     public function __construct()
     {
@@ -19,13 +21,10 @@ class Loader1C
         $this->mode = $this->request->get('mode');
         $this->version = $this->request->get('version');
         $this->orderId = $this->request->get('orderId');
-        $serverName = $_SERVER['SERVER_NAME'];
-        $exchangeDir = file_exists($_SERVER['DOCUMENT_ROOT'] . '/local/admin/1c_exchange.php') ? 'local' : 'bitrix';
-        $this->url = "http://$serverName/$exchangeDir/admin/1c_exchange.php";
-
+        $this->url = 'http://' . $_SERVER['SERVER_NAME'] . '/local/admin/1c_exchange.php';
 
         $this->http = new \Bitrix\Main\Web\HttpClient();
-        $this->http->setAuthorization('XXXXXXXXX', 'XXXXXXXXX');
+        $this->http->setAuthorization($this->login, $this->password);
         $this->http->setCookies(['PHPSESSID' => uniqid('', false), 'XDEBUG_SESSION' => 'PHPSTORM']);
         $this->checkAuth();
     }
