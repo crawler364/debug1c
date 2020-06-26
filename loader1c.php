@@ -12,12 +12,18 @@ class Loader1C
         file_put_contents($this->logFile, '');
         file_put_contents($this->ordersFile, '');
         file_put_contents($this->infoFile, '');
+
+        $this->context = \Bitrix\Main\Context::getCurrent();
+        $this->request = $this->context->getRequest();
+        $this->type = $this->request->get('type');
+        $this->mode = $this->request->get('mode');
+        $this->version = $this->request->get('version');
+        $this->orderId = $this->request->get('orderId');
         $serverName = $_SERVER['SERVER_NAME'];
-        $this->url = "http://$serverName/local/admin/1c_exchange.php";
-        $this->type = $_GET['type'];
-        $this->mode = $_GET['mode'];
-        $this->version = $_GET['version'];
-        $this->orderId = $_GET['orderId'];
+        $exchangeDir = file_exists($_SERVER['DOCUMENT_ROOT'] . '/local/admin/1c_exchange.php') ? 'local' : 'bitrix';
+        $this->url = "http://$serverName/$exchangeDir/admin/1c_exchange.php";
+
+
         $this->http = new \Bitrix\Main\Web\HttpClient();
         $this->http->setAuthorization('XXXXXXXXX', 'XXXXXXXXX');
         $this->http->setCookies(['PHPSESSID' => uniqid('', false), 'XDEBUG_SESSION' => 'PHPSTORM']);
@@ -30,8 +36,10 @@ class Loader1C
         $checkauth = $this->convertEncoding($this->http->get($fullUrl));
         preg_match('/sessid=.*/', $checkauth, $sessid);
         $this->sessid = $sessid[0];
-        $this->http->setHeader('X-Bitrix-Csrf-Token', $this->sessid, true);
-        $this->add2log($checkauth);
+        if ($this->sessid) {
+            $this->http->setHeader('X-Bitrix-Csrf-Token', $this->sessid, true);
+            $this->getMessage(2);
+        }
     }
 
     private function init()
@@ -39,11 +47,19 @@ class Loader1C
         $version = $this->version ? "version=$this->version" : '';
         $fullUrl = "$this->url?type=$this->type&$this->sessid&mode=init&$version";
         $init = $this->convertEncoding($this->http->get($fullUrl));
-        $this->add2log($init);
+        $this->getMessage(3);
     }
 
     public function handler()
     {
+        if ($this->mode == 'import') {
+            global $USER;
+            if (!$USER->IsAdmin()) {
+                $this->getError(0);
+                $this->getMessage(1);
+                exit;
+            }
+        }
         switch ($this->type) {
             case 'catalog':
                 // $this->init();
@@ -51,7 +67,7 @@ class Loader1C
                     $this->getError(1);
                     break;
                 }
-                $this->add2log("importing file '$file'");
+                $this->getMessage(4, $file);
                 $fullUrl = "$this->url?type=$this->type&mode=$this->mode&filename=$file&$this->sessid";
                 $this->stepImport($fullUrl);
                 break;
@@ -63,7 +79,7 @@ class Loader1C
                             $this->getError(1);
                             break;
                         }
-                        $this->add2log("importing file '$file'");
+                        $this->getMessage(4, $file);
                         $fullUrl = "$this->url?type=$this->type&mode=$this->mode&filename=$file&$this->sessid";
                         $this->stepImport($fullUrl);
                         break;
@@ -73,13 +89,13 @@ class Loader1C
                         $fullUrl = "$this->url?type=$this->type&mode=$this->mode&$this->sessid&$orderId";
                         $query = $this->http->get($fullUrl);
                         file_put_contents($this->ordersFile, $query);
-                        $this->add2log('<a href="' . $this->ordersFile . '" target="_blank">' . $this->ordersFile . '</a>');
+                        $this->getMessage(5, $this->ordersFile);
                         break;
                     case'info':
                         $fullUrl = "$this->url?type=$this->type&mode=$this->mode&$this->sessid";
                         $info = $this->http->get($fullUrl);
                         file_put_contents($this->infoFile, $info);
-                        $this->add2log('<a href="' . $this->infoFile . '" target="_blank">' . $this->infoFile . '</a>');
+                        $this->getMessage(5, $this->infoFile);
                         break;
                 }
                 break;
@@ -89,13 +105,13 @@ class Loader1C
                     $this->getError(1);
                     break;
                 }
-                $this->add2log("importing file '$file'");
+                $this->getMessage(4, $file);
                 $fullUrl = "$this->url?type=$this->type&mode=$this->mode&filename=$file&$this->sessid";
                 $this->stepImport($fullUrl);
                 break;
         }
 
-        $this->add2log('done');
+        $this->getMessage(1);
     }
 
     private function getImportFile($dir)
@@ -113,7 +129,7 @@ class Loader1C
     {
         $import = $this->convertEncoding($this->http->get($fullUrl));
         preg_match('/progress/', $import, $match);
-        $this->add2log($import);
+        $this->getMessage(0, $import);
         if ($match) {
             $this->stepImport($fullUrl);
         }
@@ -126,14 +142,39 @@ class Loader1C
         file_put_contents($this->logFile, $this->log);
     }
 
+    private function getMessage($num, $param = null)
+    {
+        switch ($num) {
+            case 0:
+                $mess = $param;
+                break;
+            case 1:
+                $mess = 'done';
+                break;
+            case 2:
+                $mess = 'http client authentification success';
+                break;
+            case 3:
+                $mess = 'http client initialisation success';
+                break;
+            case 4:
+                $mess = "importing file $param";
+                break;
+            case 5:
+                $mess = '<a href="' . $param . '" target="_blank">' . $param . '</a>';
+        }
+
+        $this->add2log($mess);
+    }
+
     private function getError($num)
     {
         switch ($num) {
             case 0:
-                $error = "";
+                $error = "error #$num - you must be an admin for this";
                 break;
             case 1:
-                $error = "Ошибка #$num. Файл для импорта не найден.";
+                $error = "error #$num - import file not found";
                 break;
         }
         $this->add2log($error);
