@@ -45,8 +45,9 @@ class Loader1C
     {
         $version = $this->version ? "version=$this->version" : '';
         $fullUrl = "$this->url?type=$this->type&$this->sessid&mode=init&$version";
-        $init = $this->convertEncoding($this->http->get($fullUrl));
-        $this->getMessage(3);
+        if ($init = $this->convertEncoding($this->http->get($fullUrl))) {
+            $this->getMessage(3);
+        }
     }
 
     public function handler()
