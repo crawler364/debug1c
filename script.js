@@ -39,36 +39,30 @@ $(document).ready(function () {
         }
     });
     $("#jsCatalogImport a").click(function () {
-        $.ajax({url: 'loader1c.php?type=catalog&mode=import'}).done(function () {
-            parseLog();
-        });
+        $.ajax({url: 'loader1c.php?type=catalog&mode=import'});
+        parseLog();
     });
     $('#jsSaleImport a').click(function () {
-        $.ajax({url: 'loader1c.php?type=sale&mode=import'}).done(function () {
-            parseLog();
-        });
+        $.ajax({url: 'loader1c.php?type=sale&mode=import'});
+        parseLog();
     });
     $('#jsSaleExport a').click(function () {
         let orderId = $('#jsSaleExport input').val();
         let version = $('#jsSaleExport select').val();
-        $.ajax({url: 'loader1c.php?type=sale&mode=query&orderId=' + orderId + '&version=' + version}).done(function () {
-            parseLog();
-        });
+        $.ajax({url: 'loader1c.php?type=sale&mode=query&orderId=' + orderId + '&version=' + version});
+        parseLog();
     });
     $('#jsSaleInfo a').click(function () {
-        $.ajax({url: 'loader1c.php?type=sale&mode=info'}).done(function () {
-            parseLog();
-        });
+        $.ajax({url: 'loader1c.php?type=sale&mode=info'});
+        parseLog();
     });
     $('#jsHighLoadBlock a').click(function () {
-        $.ajax({url: 'loader1c.php?type=reference&mode=import'}).done(function () {
-            parseLog();
-        });
+        $.ajax({url: 'loader1c.php?type=reference&mode=import'});
+        parseLog();
     });
     $('#jsExchangeOrder1C a').click(function () {
         let orderId = $('#jsExchangeOrder1C input').val();
-        $.ajax({url: 'loader1c.php?type=sale&mode=exchangeOrder1C&orderId=' + orderId}).done(function () {
-            parseLog();
-        });
+        $.ajax({url: 'loader1c.php?type=sale&mode=exchangeOrder1C&orderId=' + orderId});
+        parseLog();
     });
 });
