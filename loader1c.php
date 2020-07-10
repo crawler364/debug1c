@@ -1,4 +1,4 @@
-<?
+<?php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php');
 
 class Loader1C
@@ -14,6 +14,8 @@ class Loader1C
         file_put_contents($this->logFile, '');
         file_put_contents($this->ordersFile, '');
         file_put_contents($this->infoFile, '');
+
+        Bitrix\Main\Loader::includeModule('sale');
 
         $this->context = \Bitrix\Main\Context::getCurrent();
         $this->request = $this->context->getRequest();
@@ -52,7 +54,8 @@ class Loader1C
 
     public function handler()
     {
-        if ($this->mode == 'import') {
+
+        if ($this->mode === 'import' || $this->mode === 'exchangeOrder1C') {
             global $USER;
             if (!$USER->IsAdmin()) {
                 $this->getError(0);
@@ -97,6 +100,27 @@ class Loader1C
                         file_put_contents($this->infoFile, $info);
                         $this->getMessage(5, $this->infoFile);
                         break;
+                    case'exchangeOrder1C':
+                        $this->getMessage(6);
+                        if ($order = \Bitrix\Sale\Order::load($this->orderId)) {
+                            $this->getMessage(7);
+                        } else {
+                            $this->getError(2);
+                            break;
+                        }
+                        $oldDateUpdate = $order->getField('DATE_UPDATE')->toString();
+                        $order->setField('UPDATED_1C', 'Y');
+                        $order->save();
+                        $order->setField('UPDATED_1C', 'N');
+                        $order->save();
+                        $newDateUpdate = $order->getField('DATE_UPDATE')->toString();
+                        if ($oldDateUpdate !== $newDateUpdate && $order->getField('UPDATED_1C') === 'N') {
+                            $this->getMessage(8, $newDateUpdate);
+                        } else {
+                            $this->getError(3);
+                            break;
+                        }
+                        break;
                 }
                 break;
             case 'reference':
@@ -119,7 +143,7 @@ class Loader1C
         $files = scandir($_SERVER['DOCUMENT_ROOT'] . '/upload/' . $dir . '/', 1);
         foreach ($files as $file) {
             $info = new SplFileInfo($file);
-            if ($info->getExtension() == 'xml') {
+            if ($info->getExtension() === 'xml') {
                 return $file;
             }
         }
@@ -162,6 +186,18 @@ class Loader1C
                 break;
             case 5:
                 $mess = '<a href="' . $param . '" target="_blank">' . $param . '</a>';
+                break;
+            case 6:
+                $mess = 'searching order..';
+                break;
+            case 7:
+                $mess = "order #$this->orderId found";
+                break;
+            case 8:
+                $mess = "order #$this->orderId marked for an exchange with 1C $param";
+                break;
+            default:
+                $mess = null;
         }
 
         $this->add2log($mess);
@@ -176,6 +212,14 @@ class Loader1C
             case 1:
                 $error = "error #$num - import file not found";
                 break;
+            case 2:
+                $error = "error #$num - order #$this->orderId not found";
+                break;
+            case 3:
+                $error = "error #$num - order #$this->orderId don't updated";
+                break;
+            default:
+                $error = null;
         }
         $this->add2log($error);
     }
