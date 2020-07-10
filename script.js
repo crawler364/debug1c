@@ -13,7 +13,7 @@ async function parseLog() {
 }
 
 $(document).ready(function () {
-    $('#auth #form').submit(function (e) {
+    $('#auth form').submit(function (e) {
         e.preventDefault();
         const $mess = $('#auth #mess');
         $mess.html('');

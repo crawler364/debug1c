@@ -3,8 +3,8 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_be
 global $USER;
 if ($USER->IsAuthorized()) {
     $userInfo = CUser::GetByID($USER->GetID())->Fetch();
+    $isAdmin = $USER->IsAdmin();
 }
-$isAdmin = $USER->IsAdmin();
 ?>
 <html>
 <head></head>
@@ -18,15 +18,15 @@ $isAdmin = $USER->IsAdmin();
             $userInfo['LAST_NAME'] . ', ' .
             $userInfo['EMAIL'] . ' | ';
         ?>
-      <form id="form" method="POST" action="" style="display: inline-block">
+      <form method="POST" action="" style="display: inline-block">
         <input type="hidden" name="action" value="logout">
         <input type="submit" value="logout"/>
       </form>
     <? } else { ?>
-      <form id="form" method="POST" action="">
+      <form method="POST" action="">
         <input type="hidden" name="action" value="login">
         <input type="text" name="login" placeholder="login"/>
-        <input type="text" name="password" placeholder="password"/>
+        <input type="password" name="password" placeholder="password"/>
         <input type="submit" value="login"/>
       </form>
     <? } ?>
