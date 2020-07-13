@@ -50,6 +50,8 @@ if ($USER->IsAuthorized()) {
     <select>
       <option value="2.05">2.05</option>
       <option value="2.09" selected>2.09</option>
+      <option value="2.10">2.10</option>
+      <option value="3.1">3.1</option>
     </select>
   </p>
   <p id="jsSaleInfo"><a href="#">Sale Info</a></p>
