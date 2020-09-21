@@ -24,8 +24,7 @@ class Loader1C
         $this->mode = $this->request->get('mode');
         $this->version = $this->request->get('version');
         $this->orderId = $this->request->get('orderId');
-        $this->destination = $this->request->get('destination');
-        $this->url = "$protocol{$_SERVER['SERVER_NAME']}/$this->destination/admin/1c_exchange.php";
+        $this->url = "$protocol{$_SERVER['SERVER_NAME']}/local/admin/1c_exchange.php";
 
         $this->http = new \Bitrix\Main\Web\HttpClient();
         $this->http->setAuthorization($this->login, $this->password);
