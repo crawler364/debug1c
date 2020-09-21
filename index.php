@@ -1,6 +1,8 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php');
 
+CJSCore::Init(["jquery2"]);
+
 global $USER;
 if ($USER->IsAuthorized()) {
     $userInfo = CUser::GetByID($USER->GetID())->Fetch();
