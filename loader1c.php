@@ -17,13 +17,15 @@ class Loader1C
 
         Bitrix\Main\Loader::includeModule('sale');
 
+        $protocol = CMain::IsHTTPS() ? "https://" : "http://";
         $this->context = \Bitrix\Main\Context::getCurrent();
         $this->request = $this->context->getRequest();
         $this->type = $this->request->get('type');
         $this->mode = $this->request->get('mode');
         $this->version = $this->request->get('version');
         $this->orderId = $this->request->get('orderId');
-        $this->url = 'http://' . $_SERVER['SERVER_NAME'] . '/local/admin/1c_exchange.php';
+        $this->destination = $this->request->get('destination');
+        $this->url = "$protocol{$_SERVER['SERVER_NAME']}/$this->destination/admin/1c_exchange.php";
 
         $this->http = new \Bitrix\Main\Web\HttpClient();
         $this->http->setAuthorization($this->login, $this->password);

@@ -1,5 +1,6 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php');
+
 global $USER;
 if ($USER->IsAuthorized()) {
     $userInfo = CUser::GetByID($USER->GetID())->Fetch();
@@ -11,13 +12,7 @@ if ($USER->IsAuthorized()) {
 <body>
 <div id="auth">
     <? if ($userInfo) {
-        $userInfo = CUser::GetByID($USER->GetID())->Fetch();
-        echo
-            '[' . $userInfo['ID'] . '], ' .
-            $userInfo['NAME'] . ' ' .
-            $userInfo['LAST_NAME'] . ', ' .
-            $userInfo['EMAIL'] . ' | ';
-        ?>
+        echo "[{$userInfo['ID']}] {$userInfo['NAME']} {$userInfo['LAST_NAME']} | | {$userInfo['EMAIL']} | | "; ?>
       <form method="POST" action="" style="display: inline-block">
         <input type="hidden" name="action" value="logout">
         <input type="submit" value="logout"/>
@@ -34,6 +29,13 @@ if ($USER->IsAuthorized()) {
 </div>
 <hr>
 <div>
+  <p data-use="destination">
+    <span>Destination</span>
+    <select>
+      <option value="local" selected>local</option>
+      <option value="bitrix">bitrix</option>
+    </select>
+  </p>
     <? if ($isAdmin) { ?>
       <p id="jsCatalogImport"><a href="#">Catalog Import</a></p>
       <p id="jsSaleImport"><a href="#">Sale Import</a></p>
