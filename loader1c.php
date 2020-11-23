@@ -35,11 +35,11 @@ class Loader1C
     }
 
 
-    //todo ����� � ��������� �����?
+    //todo почему в отдельный метод?
     private function checkAuth()
     {
         $fullUrl = "$this->url?type=$this->type&mode=checkauth";
-        $checkauth = $this->convertEncoding($this->http->get($fullUrl)); // todo �������� ���� �� ������� ������
+        $checkauth = $this->convertEncoding($this->http->get($fullUrl)); // todo обработка ошибки
         preg_match('/sessid=.*/', $checkauth, $sessid);
         $this->sessid = $sessid[0];
         if ($this->sessid) {
