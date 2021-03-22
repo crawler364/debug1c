@@ -9,6 +9,14 @@ class Loader1C
     private $infoFile = 'info.xml';
     private $login = '';
     private $password = '';
+    private $data;
+    private $url;
+    private $http;
+    private $mode;
+    private $version;
+    private $sessid;
+    private $orderId;
+    private $log;
 
     public function __construct()
     {
@@ -29,7 +37,7 @@ class Loader1C
         $this->http->setCookies(['PHPSESSID' => uniqid(), 'XDEBUG_SESSION' => 'PHPSTORM']);
     }
 
-    private function checkAuth()
+    private function checkAuth(): void
     {
         $url = "$this->url?type={$this->data['type']}&mode=checkauth";
         $get = $this->convertEncoding($this->http->get($url));
@@ -42,7 +50,7 @@ class Loader1C
         }
     }
 
-    private function init()
+    private function init(): void
     {
         $version = $this->version ? "version={$this->data['version']}" : '';
         $url = "$this->url?type={$this->data['type']}&mode=init&sessid=$this->sessid&$version";
@@ -51,7 +59,7 @@ class Loader1C
         }
     }
 
-    private function import($file)
+    private function import($file): void
     {
         $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&filename=$file";
         $get = $this->convertEncoding($this->http->get($url));
@@ -62,7 +70,7 @@ class Loader1C
         }
     }
 
-    private function query()
+    private function query(): void
     {
         $this->init();
         $orderId = $this->data['orderId'] ? "orderId=$this->orderId" : '';
@@ -72,7 +80,7 @@ class Loader1C
         $this->getMessage(5, $this->ordersFile);
     }
 
-    private function info()
+    private function info(): void
     {
         $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid";
         $get = $this->http->get($url);
@@ -80,7 +88,7 @@ class Loader1C
         $this->add2log($this->getMessage('WC_FILE_LINK', ['#FILE#' => $this->infoFile]));
     }
 
-    public function handler()
+    public function handler(): void
     {
         $this->checkAuth();
 
@@ -132,12 +140,15 @@ class Loader1C
                             $this->add2log($this->getMessage('WC_ORDER_NOT_FOUND', ['#ORDER_ID#' => $this->orderId]));
                             break;
                         }
-                        $oldDateUpdate = $order->getField('DATE_UPDATE')->toString();
+                        /** @var Bitrix\Main\Type\Date $date */
+                        $date = $order->getField('DATE_UPDATE');
+                        $oldDateUpdate = $date->toString();
                         $order->setField('UPDATED_1C', 'Y');
                         $order->save();
                         $order->setField('UPDATED_1C', 'N');
                         $order->save();
-                        $newDateUpdate = $order->getField('DATE_UPDATE')->toString();
+                        $date = $order->getField('DATE_UPDATE');
+                        $newDateUpdate = $date->toString();
                         if ($oldDateUpdate !== $newDateUpdate && $order->getField('UPDATED_1C') === 'N') {
                             $this->add2log($this->getMessage('WC_ORDER_MARKED', ['#ORDER_ID#' => $this->orderId, '#DATE#' => $newDateUpdate]));
                         } else {
@@ -175,37 +186,16 @@ class Loader1C
         return null;
     }
 
-    private function add2log($str)
+    private function add2log($str): void
     {
         $str = preg_replace("/[\\n]/", " ", $str);
         $this->log .= date('d.m.y H:i:s') . ": $str \n";
         file_put_contents($this->logFile, $this->log);
     }
 
-    private function getMessage($code, $replace = null, $language = 'en')
+    private function getMessage($code, $replace = null, $language = 'en'): string
     {
         return Bitrix\Main\Localization\Loc::getMessage($code, $replace, $language);
-    }
-
-    private function getError($num)
-    {
-        switch ($num) {
-            case 0:
-                $error = "error #$num - you must be an admin for this";
-                break;
-            case 1:
-                $error = "error #$num - import file not found";
-                break;
-            case 2:
-                $error = "error #$num - order #$this->orderId not found";
-                break;
-            case 3:
-                $error = "error #$num - order #$this->orderId don't updated";
-                break;
-            default:
-                $error = null;
-        }
-        $this->add2log($error);
     }
 
     private function convertEncoding($str): string
