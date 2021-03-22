@@ -9,53 +9,60 @@ if ($USER->IsAuthorized()) {
     $isAdmin = $USER->IsAdmin();
 }
 ?>
-<html>
+<html lang="ru">
 <head></head>
 <body>
 <div id="auth">
     <? if ($userInfo) {
         echo "[{$userInfo['ID']}] {$userInfo['NAME']} {$userInfo['LAST_NAME']} | | {$userInfo['EMAIL']} | | "; ?>
-      <form method="POST" action="" style="display: inline-block">
-        <input type="hidden" name="action" value="logout">
-        <input type="submit" value="logout"/>
-      </form>
+        <form method="POST" action="" style="display: inline-block">
+            <input type="hidden" name="action" value="logout">
+            <input type="submit" value="logout"/>
+        </form>
     <? } else { ?>
-      <form method="POST" action="">
-        <input type="hidden" name="action" value="login">
-        <input type="text" name="login" placeholder="login"/>
-        <input type="password" name="password" placeholder="password"/>
-        <input type="submit" value="login"/>
-      </form>
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="login">
+            <input type="text" name="login" placeholder="login"/>
+            <input type="password" name="password" placeholder="password"/>
+            <input type="submit" value="login"/>
+        </form>
     <? } ?>
-  <div id="mess"></div>
+    <div id="mess"></div>
 </div>
 <hr>
 <div>
+    <p data-use="kernelDir">
+        <span>Kernel Dir</span>
+        <select>
+            <option value="local" selected>local</option>
+            <option value="bitrix">bitrix</option>
+        </select>
+    </p>
     <? if ($isAdmin) { ?>
-      <p id="jsCatalogImport"><a href="#">Catalog Import</a></p>
-      <p id="jsSaleImport"><a href="#">Sale Import</a></p>
-      <p id="jsHighLoadBlock"><a href="#">HighLoadBlock Import</a></p>
-      <p id="jsExchangeOrder1C">
-        <a href="#">Exchange Order 1C</a>
-        <input type="text" placeholder="Order ID"/>
-      </p>
+        <p id="jsCatalogImport"><a href="#">Catalog Import</a></p>
+        <p id="jsSaleImport"><a href="#">Sale Import</a></p>
+        <p id="jsHighLoadBlock"><a href="#">HighLoadBlock Import</a></p>
+        <p id="jsExchangeOrder1C">
+            <a href="#">Exchange Order 1C</a>
+            <input type="text" placeholder="Order ID"/>
+        </p>
     <? } ?>
-  <p id="jsSaleExport">
-    <a href="#">Sale Export</a>
-    <input type="text" placeholder="Order ID (opt)"/>
-    Ver.
-    <select>
-      <option value="2.05">2.05</option>
-      <option value="2.09" selected>2.09</option>
-      <option value="2.10">2.10</option>
-      <option value="3.1">3.1</option>
-    </select>
-  </p>
-  <p id="jsSaleInfo"><a href="#">Sale Info</a></p>
+    <p id="jsSaleExport">
+        <a href="#">Sale Export</a>
+        <input type="text" placeholder="Order ID (opt)"/>
+        Ver.
+        <select>
+            <option value="2.05">2.05</option>
+            <option value="2.09" selected>2.09</option>
+            <option value="2.10">2.10</option>
+            <option value="3.1">3.1</option>
+        </select>
+    </p>
+    <p id="jsSaleInfo"><a href="#">Sale Info</a></p>
 </div>
 <hr>
 <div id="data">
-  <pre></pre>
+    <pre></pre>
 </div>
 <script type="text/javascript" src="https://yastatic.net/jquery/3.3.1/jquery.min.js"></script>
 <script type="text/javascript" src="script.js"></script>
