@@ -1,70 +1,110 @@
-<?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php');
+<div id="wc-debug1c">
+    <div>
+        <? if ($arResult['USER_INFO']) {
+            echo "[{$arResult['USER_INFO']['ID']}] {$arResult['USER_INFO']['NAME']} {$arResult['USER_INFO']['LAST_NAME']} | | {$arResult['USER_INFO']['EMAIL']} | | "; ?>
+            <a href="<?= $APPLICATION->GetCurPageParam("logout=yes&" . bitrix_sessid_get(), ['logout']) ?>"><?= GetMessage('WC_DEBUG1C_LOGOUT') ?></a>
+        <? } else { ?>
+            <? $APPLICATION->IncludeComponent('bitrix:system.auth.authorize', '') ?>
+        <? } ?>
+    </div>
+    <hr>
+    <div>
+        <form action="" method="post">
+            <table>
+                <tr>
+                    <td>
+                        <label for="debug-dir"></label>
+                    </td>
+                    <td>
+                        <select id="debug-dir" name="debug-dir">
+                            <option value="<?= GetMessage('WC_DEBUG1C_DIR_BITRIX') ?>"
+                                    selected><?= GetMessage('WC_DEBUG1C_DIR_BITRIX') ?></option>
+                            <option value="<?= GetMessage('WC_DEBUG1C_DIR_LOCAL') ?>"><?= GetMessage('WC_DEBUG1C_DIR_LOCAL') ?></option>
+                        </select>
+                        <?= GetMessage('WC_DEBUG1C_URL') ?>
+                    </td>
+                </tr>
+                <? if ($arResult['USER_INFO']['IS_ADMIN']) { ?>
+                    <tr>
+                        <td>
+                            <input type="radio" name="debug-mode" id="catalog-import" value="catalog-import">
+                        </td>
+                        <td>
+                            <label for="catalog-import"><?= GetMessage('WC_DEBUG1C_CATALOG_IMPORT') ?></label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="radio" name="debug-mode" id="sale-import" value="sale-import">
+                        </td>
+                        <td>
+                            <label for="sale-import"><?= GetMessage('WC_DEBUG1C_SALE_IMPORT') ?></label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="radio" name="debug-mode" id="highloadblock-import"
+                                   value="highloadblock-import">
+                        </td>
+                        <td>
+                            <label for="highloadblock-import"><?= GetMessage('WC_DEBUG1C_HIGHLOADBLOCK_IMPORT') ?></label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="radio" name="debug-mode" id="exchange-order" value="exchange-order">
+                        </td>
+                        <td>
+                            <label for="exchange-order"><?= GetMessage('WC_DEBUG1C_EXCHANGE_ORDER') ?></label>
+                            <label>
+                                <input type="text" placeholder="<?= GetMessage('WC_DEBUG1C_ORDER_ID') ?>">
+                            </label>
+                        </td>
+                    </tr>
+                <? } ?>
+                <tr>
+                    <td>
+                        <input type="radio" name="debug-mode" id="sale-export" value="sale-export">
+                    </td>
+                    <td>
+                        <label for="sale-export"><?= GetMessage('WC_DEBUG1C_SALE_EXPORT') ?></label>
+                        <label>
+                            <input type="text" placeholder="<?= GetMessage('WC_DEBUG1C_SALE_EXPORT_ORDER_ID') ?>">
+                        </label>
+                        Ver.
+                        <label>
+                            <select>
+                                <option value="2.05">2.05</option>
+                                <option value="2.09" selected>2.09</option>
+                                <option value="2.10">2.10</option>
+                                <option value="3.1">3.1</option>
+                            </select>
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="radio" name="debug-mode" id="sale-info" value="sale-info">
+                    </td>
+                    <td>
+                        <label for="sale-info"><?= GetMessage('WC_DEBUG1C_SALE_INFO') ?></label>
+                    </td>
+                </tr>
+            </table>
 
-CJSCore::Init(["jquery2"]);
+            <button data-action-submit type="submit"><?= GetMessage('WC_DEBUG1C_SUBMIT_BUTTON') ?></button>
+        </form>
+    </div>
+    <hr>
+    <div data-type="data">
+        <pre></pre>
+    </div>
+</div>
 
-global $USER;
-if ($USER->IsAuthorized()) {
-    $userInfo = CUser::GetByID($USER->GetID())->Fetch();
-    $isAdmin = $USER->IsAdmin();
-}
-?>
-<html lang="ru">
-<head></head>
-<body>
-<div id="auth">
-    <? if ($userInfo) {
-        echo "[{$userInfo['ID']}] {$userInfo['NAME']} {$userInfo['LAST_NAME']} | | {$userInfo['EMAIL']} | | "; ?>
-        <form method="POST" action="" style="display: inline-block">
-            <input type="hidden" name="action" value="logout">
-            <input type="submit" value="logout"/>
-        </form>
-    <? } else { ?>
-        <form method="POST" action="">
-            <input type="hidden" name="action" value="login">
-            <input type="text" name="login" placeholder="login"/>
-            <input type="password" name="password" placeholder="password"/>
-            <input type="submit" value="login"/>
-        </form>
-    <? } ?>
-    <div id="mess"></div>
-</div>
-<hr>
-<div>
-    <p data-use="kernelDir">
-        <span>Kernel Dir</span>
-        <select>
-            <option value="local" selected>local</option>
-            <option value="bitrix">bitrix</option>
-        </select>
-    </p>
-    <? if ($isAdmin) { ?>
-        <p id="jsCatalogImport"><a href="#">Catalog Import</a></p>
-        <p id="jsSaleImport"><a href="#">Sale Import</a></p>
-        <p id="jsHighLoadBlock"><a href="#">HighLoadBlock Import</a></p>
-        <p id="jsExchangeOrder1C">
-            <a href="#">Exchange Order 1C</a>
-            <input type="text" placeholder="Order ID"/>
-        </p>
-    <? } ?>
-    <p id="jsSaleExport">
-        <a href="#">Sale Export</a>
-        <input type="text" placeholder="Order ID (opt)"/>
-        Ver.
-        <select>
-            <option value="2.05">2.05</option>
-            <option value="2.09" selected>2.09</option>
-            <option value="2.10">2.10</option>
-            <option value="3.1">3.1</option>
-        </select>
-    </p>
-    <p id="jsSaleInfo"><a href="#">Sale Info</a></p>
-</div>
-<hr>
-<div id="data">
-    <pre></pre>
-</div>
-<script type="text/javascript" src="https://yastatic.net/jquery/3.3.1/jquery.min.js"></script>
-<script type="text/javascript" src="script.js"></script>
-</body>
-</html>
+<script type="text/javascript">
+    if (!window.hasOwnProperty('WCDebug1C')) {
+        window.WCDebug1C = new WCDebug1C(<?=Bitrix\Main\Web\Json::encode([
+            'test' => $arParams['test'],
+        ])?>);
+    }
+</script>

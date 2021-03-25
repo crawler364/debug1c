@@ -1,70 +1,54 @@
-async function parseLog() {
-    await new Promise(r => setTimeout(r, 500));
-    $.ajax({
-        url: 'log.txt',
-        dataType: 'text',
-        async: false
-    }).done(function (res) {
-        $('#data pre').html(res);
-        if (res.search('done') === -1) {
-            parseLog();
-        }
-    });
+class WCDebug1C {
+    constructor() {
+        BX.ready(() => {
+            this.wcDebug1c = BX('wc-debug1c');
+            this.form = BX.findChild(this.wcDebug1c, {tag: 'form'}, true, false);
+            this.data = BX.findChild(
+                BX.findChild(this.wcDebug1c, {attribute: {'data-type': 'data'}}, true, false),
+                {tag: 'pre'}, true, false
+            );
+
+            BX.bindDelegate(this.wcDebug1c, 'submit', this.form, this.handler.bind(this));
+        });
+    }
+
+    handler(e) {
+        BX.PreventDefault(e);
+
+        let formData = new FormData(e.target);
+
+        console.log(formData)
+        BX.ajax.runComponentAction('wc:debug1c', 'handler', {
+            mode: 'ajax',
+            data: formData,
+        }).then((response) => {
+            console.log(response);
+            this.parseLog();
+        }, function (response) {
+            console.log(response);
+            // todo обработка ошибок
+        });
+
+    }
+
+    parseLog() {
+        setTimeout(function () {
+            BX.ajax.insertToNode('log.txt', this.data);
+        }, 500);
+
+
+        /*BX.ajax({
+            url: 'log.txt',
+            dataType: 'html',
+            async: false
+        }).then((response) => {
+            BX.adjust(this.data, {text: response});
+
+            if (response.search('done') === -1) {
+                parseLog();
+            }
+        }, (response) => {
+
+        });*/
+    }
 }
-
-$(document).ready(function () {
-    $('#auth form').submit(function (e) {
-        e.preventDefault();
-        const $mess = $('#auth #mess');
-        $mess.html('');
-        const data = $(e.target).serializeArray().reduce((acc, {name, value}) => ({...acc, [name]: value}), {});
-        switch (data.action) {
-            case 'login':
-                $.ajax({
-                    url: 'auth.php?action=' + data.action + '&login=' + data.login + '&password=' + data.password,
-                    dataType: 'json'
-                }).done(function (res) {
-                    if (res.TYPE === 'ERROR') {
-                        $mess.html(res.MESSAGE);
-                    } else {
-                        location.reload();
-                    }
-                });
-                break;
-            case 'logout':
-                $.ajax({url: 'auth.php?action=' + data.action}).done(function () {
-                    location.reload();
-                });
-                break;
-        }
-    });
-
-    $("#jsCatalogImport a").click(function () {
-        let kernelDir = $('[data-use="kernelDir"] select').val();
-        $.ajax({url: `loader1c.php?type=catalog&mode=import&kernelDir=${kernelDir}`});
-        parseLog();
-    });
-    $('#jsSaleImport a').click(function () {
-        $.ajax({url: `loader1c.php?type=sale&mode=import&kernelDir=${kernelDir}`});
-        parseLog();
-    });
-    $('#jsSaleExport a').click(function () {
-        let orderId = $('#jsSaleExport input').val();
-        let version = $('#jsSaleExport select').val();
-        $.ajax({url: `loader1c.php?type=sale&mode=query&orderId=${orderId}&version=${version}&kernelDir=${kernelDir}`});
-        parseLog();
-    });
-    $('#jsSaleInfo a').click(function () {
-        $.ajax({url: `loader1c.php?type=sale&mode=info&kernelDir=${kernelDir}`});
-        parseLog();
-    });
-    $('#jsHighLoadBlock a').click(function () {
-        $.ajax({url: `loader1c.php?type=reference&mode=import&kernelDir=${kernelDir}`});
-        parseLog();
-    });
-    $('#jsExchangeOrder1C a').click(function () {
-        let orderId = $('#jsExchangeOrder1C input').val();
-        $.ajax({url: `loader1c.php?type=sale&mode=exchangeOrder1C&orderId=${orderId}&kernelDir=${kernelDir}`});
-        parseLog();
-    });
-});
