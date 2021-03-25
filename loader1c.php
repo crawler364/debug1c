@@ -7,8 +7,8 @@ class Loader1C
     private $logFile = 'log.txt';
     private $ordersFile = 'orders.xml';
     private $infoFile = 'info.xml';
-    private $login = '';
-    private $password = '';
+    private $login = 'admin';
+    private $password = '123456';
     private $data;
     private $url;
     private $http;
@@ -35,57 +35,6 @@ class Loader1C
         $this->http = new \Bitrix\Main\Web\HttpClient();
         $this->http->setAuthorization($this->login, $this->password);
         $this->http->setCookies(['PHPSESSID' => uniqid(), 'XDEBUG_SESSION' => 'PHPSTORM']);
-    }
-
-    private function checkAuth(): void
-    {
-        $url = "$this->url?type={$this->data['type']}&mode=checkauth";
-        $get = $this->convertEncoding($this->http->get($url));
-
-        preg_match('/sessid=\K.*/', $get, $sessid);
-
-        if ($this->sessid = $sessid[0]) {
-            $this->http->setHeader('X-Bitrix-Csrf-Token', $this->sessid, true);
-            $this->add2log($this->getMessage('WC_HTTP_CLIENT_AUTH_SUCCESS'));
-        }
-    }
-
-    private function init(): void
-    {
-        $version = $this->version ? "version={$this->data['version']}" : '';
-        $url = "$this->url?type={$this->data['type']}&mode=init&sessid=$this->sessid&$version";
-        if ($init = $this->convertEncoding($this->http->get($url))) {
-            $this->add2log($this->getMessage('WC_HTTP_CLIENT_INIT_SUCCESS'));
-        }
-    }
-
-    private function import($file): void
-    {
-        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&filename=$file";
-        $get = $this->convertEncoding($this->http->get($url));
-        preg_match('/progress/', $get, $match);
-        $this->add2log($this->getMessage('WC_REPLACE', ['#REPLACE#' => $get]));
-        if ($match) {
-            $this->import($file);
-        }
-    }
-
-    private function query(): void
-    {
-        $this->init();
-        $orderId = $this->data['orderId'] ? "orderId=$this->orderId" : '';
-        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&$orderId";
-        $get = $this->http->get($url);
-        file_put_contents($this->ordersFile, $get);
-        $this->getMessage(5, $this->ordersFile);
-    }
-
-    private function info(): void
-    {
-        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid";
-        $get = $this->http->get($url);
-        file_put_contents($this->infoFile, $get);
-        $this->add2log($this->getMessage('WC_FILE_LINK', ['#FILE#' => $this->infoFile]));
     }
 
     public function handler(): void
@@ -170,6 +119,57 @@ class Loader1C
         }
 
         $this->add2log($this->getMessage('WC_DONE'));
+    }
+
+    private function checkAuth(): void
+    {
+        $url = "$this->url?type={$this->data['type']}&mode=checkauth";
+        $get = $this->convertEncoding($this->http->get($url));
+
+        preg_match('/sessid=\K.*/', $get, $sessid);
+
+        if ($this->sessid = $sessid[0]) {
+            $this->http->setHeader('X-Bitrix-Csrf-Token', $this->sessid, true);
+            $this->add2log($this->getMessage('WC_HTTP_CLIENT_AUTH_SUCCESS'));
+        }
+    }
+
+    private function init(): void
+    {
+        $version = $this->version ? "version={$this->data['version']}" : '';
+        $url = "$this->url?type={$this->data['type']}&mode=init&sessid=$this->sessid&$version";
+        if ($init = $this->convertEncoding($this->http->get($url))) {
+            $this->add2log($this->getMessage('WC_HTTP_CLIENT_INIT_SUCCESS'));
+        }
+    }
+
+    private function import($file): void
+    {
+        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&filename=$file";
+        $get = $this->convertEncoding($this->http->get($url));
+        preg_match('/progress/', $get, $match);
+        $this->add2log($this->getMessage('WC_REPLACE', ['#REPLACE#' => $get]));
+        if ($match) {
+            $this->import($file);
+        }
+    }
+
+    private function query(): void
+    {
+        $this->init();
+        $orderId = $this->data['orderId'] ? "orderId=$this->orderId" : '';
+        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&$orderId";
+        $get = $this->http->get($url);
+        file_put_contents($this->ordersFile, $get);
+        $this->getMessage(5, $this->ordersFile);
+    }
+
+    private function info(): void
+    {
+        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid";
+        $get = $this->http->get($url);
+        file_put_contents($this->infoFile, $get);
+        $this->add2log($this->getMessage('WC_FILE_LINK', ['#FILE#' => $this->infoFile]));
     }
 
     private function getImportFile($dir)

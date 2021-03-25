@@ -39,8 +39,8 @@ $(document).ready(function () {
         }
     });
 
-    let kernelDir = $('[data-use="kernelDir"] select').val();
     $("#jsCatalogImport a").click(function () {
+        let kernelDir = $('[data-use="kernelDir"] select').val();
         $.ajax({url: `loader1c.php?type=catalog&mode=import&kernelDir=${kernelDir}`});
         parseLog();
     });
