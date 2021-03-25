@@ -1,0 +1,19 @@
+#wc-debug1c hr {
+    margin: 1rem 0;
+    color: inherit;
+    background-color: currentColor;
+    border: 0;
+    opacity: .25;
+}
+
+#wc-debug1c form[name='debug'] td {
+    padding: 4px;
+}
+
+#wc-debug1c form[name='debug'] input[type='radio'], #wc-debug1c form[name='debug'] label {
+    cursor: pointer;
+}
+
+#wc-debug1c form[name='debug'] button {
+    margin: 20px 0;
+}

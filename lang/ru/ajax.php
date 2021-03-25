@@ -12,3 +12,4 @@ $MESS['WC_HTTP_CLIENT_INIT_SUCCESS'] = "http client initialisation success";
 $MESS['WC_SEARCHING_ORDER'] = "searching order..";
 $MESS['WC_ORDER_FOUND'] = "order #ORDER_ID# found";
 $MESS['WC_ORDER_MARKED'] = "order #ORDER_ID# marked for an exchange with 1C #DATE#";
+$MESS['WC_DEBUG1C_DIRECTORY_CREATE_ERROR'] = 'Directory #DIR# was not created';

@@ -1,26 +1,22 @@
 class WCDebug1C {
-    constructor() {
-        BX.ready(() => {
-            this.wcDebug1c = BX('wc-debug1c');
-            this.form = BX.findChild(this.wcDebug1c, {tag: 'form'}, true, false);
-            this.data = BX.findChild(
-                BX.findChild(this.wcDebug1c, {attribute: {'data-type': 'data'}}, true, false),
-                {tag: 'pre'}, true, false
-            );
-
-            BX.bindDelegate(this.wcDebug1c, 'submit', this.form, this.handler.bind(this));
-        });
+    constructor(params) {
+        this.params = params;
+        this.wcDebug1c = BX('wc-debug1c');
+        this.data = BX.findChild(this.wcDebug1c, {tag: 'pre', attribute: {'data-type': 'debug-data'}}, true, false);
+        BX.bindDelegate(this.wcDebug1c, 'submit', {
+            tag: 'form',
+            attribute: {'name': 'debug'}
+        }, this.handler.bind(this));
     }
 
     handler(e) {
         BX.PreventDefault(e);
-
         let formData = new FormData(e.target);
 
-        console.log(formData)
         BX.ajax.runComponentAction('wc:debug1c', 'handler', {
             mode: 'ajax',
             data: formData,
+            //signedParameters: this.params.signedParameters,
         }).then((response) => {
             console.log(response);
             this.parseLog();
@@ -28,7 +24,6 @@ class WCDebug1C {
             console.log(response);
             // todo обработка ошибок
         });
-
     }
 
     parseLog() {

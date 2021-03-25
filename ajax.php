@@ -1,38 +1,34 @@
 <?php
 
-
 use Bitrix\Main\Request;
+use Bitrix\Main\Localization\Loc;
+use Bitrix\Main\Web\HttpClient;
 
 class WCDebug1CAjaxController extends \Bitrix\Main\Engine\Controller
 {
-
+    private string $tmpDir;
+    private string $logFile;
+    private string $ordersFile;
+    private string $infoFile;
+    private array $data;
+    private string $url;
+    private HttpClient $http;
 
     public function __construct(Request $request = null)
     {
         parent::__construct($request);
 
-        $tmpDir = "{$_SERVER['DOCUMENT_ROOT']}/upload/tmp/debug1c";
-        if (!mkdir($tmpDir) && !is_dir($tmpDir)) {
-            throw new \RuntimeException(sprintf('Directory "%s" was not created', $tmpDir));
-        }
+        Bitrix\Main\Loader::includeModule('sale');
+        Bitrix\Main\Localization\Loc::loadMessages(__FILE__);
 
+        $this->tmpDir = "{$_SERVER['DOCUMENT_ROOT']}/upload/tmp/debug1c";
         $this->logFile = "$tmpDir/log.txt";
         $this->ordersFile = "$tmpDir/orders.xml";
         $this->infoFile = "$tmpDir/info.xml";
-
-        file_put_contents($this->logFile, '');
-        file_put_contents($this->ordersFile, '');
-        file_put_contents($this->infoFile, '');
-
-        Bitrix\Main\Loader::includeModule('sale');
-
-        Bitrix\Main\Localization\Loc::loadMessages(__FILE__);
         $this->data = Bitrix\Main\Context::getCurrent()->getRequest()->toArray();
-
         $protocol = CMain::IsHTTPS() ? "https://" : "http://";
         $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['kernelDir']}/admin/1c_exchange.php";
-
-        $this->http = new \Bitrix\Main\Web\HttpClient();
+        $this->http = new HttpClient();
         $this->http->setAuthorization($this->login, $this->password);
         $this->http->setCookies(['PHPSESSID' => uniqid(), 'XDEBUG_SESSION' => 'PHPSTORM']);
     }
@@ -48,6 +44,14 @@ class WCDebug1CAjaxController extends \Bitrix\Main\Engine\Controller
 
     public function handlerAction(): void
     {
+        if (!mkdir($this->tmpDir) && !is_dir($this->tmpDir)) {
+            throw new Bitrix\Main\SystemException(Loc::getMessage('WC_DEBUG1C_DIRECTORY_CREATE_ERROR', ['#DIR#' => $tmpDir]));
+        }
+
+        file_put_contents($this->logFile, '');
+        file_put_contents($this->ordersFile, '');
+        file_put_contents($this->infoFile, '');
+
         $this->checkAuth();
 
         if ($this->mode === 'import' || $this->mode === 'exchangeOrder1C') {
