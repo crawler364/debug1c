@@ -13,10 +13,10 @@ class WCDebug1C {
         BX.PreventDefault(e);
         let formData = new FormData(e.target);
 
-        BX.ajax.runComponentAction('wc:debug1c', 'handler', {
+        BX.ajax.runComponentAction('wc:debug1c', 'init', {
             mode: 'ajax',
             data: formData,
-            //signedParameters: this.params.signedParameters,
+            signedParameters: this.params.signedParameters,
         }).then((response) => {
             console.log(response);
             this.parseLog();

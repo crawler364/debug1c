@@ -1,5 +1,4 @@
 <?php
-$MESS['WC_UNAUTHORIZED'] = "error - you must be an admin for this";
 $MESS['WC_FILE_NOT_FOUND'] = "error - import file not found";
 $MESS['WC_ORDER_NOT_FOUND'] = "error - order ##ORDER_ID# not found";
 $MESS['WC_ORDER_DONT_UPDATED'] = "error - order ##ORDER_ID# don't updated";

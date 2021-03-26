@@ -33,7 +33,8 @@
                     <? if ($arResult['USER_INFO']['IS_ADMIN']) { ?>
                         <tr>
                             <td>
-                                <input type="radio" name="debug-mode" id="catalog-import" value="catalog-import">
+                                <input type="radio" name="type-mode" id="catalog-import"
+                                       value="{'type':'catalog','mode':'import'}">
                             </td>
                             <td>
                                 <label for="catalog-import"><?= GetMessage('WC_DEBUG1C_CATALOG_IMPORT') ?></label>
@@ -41,7 +42,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="debug-mode" id="sale-import" value="sale-import">
+                                <input type="radio" name="type-mode" id="sale-import" value="{'type':'sale','mode':'import'}">
                             </td>
                             <td>
                                 <label for="sale-import"><?= GetMessage('WC_DEBUG1C_SALE_IMPORT') ?></label>
@@ -49,8 +50,8 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="debug-mode" id="highloadblock-import"
-                                       value="highloadblock-import">
+                                <input type="radio" name="type-mode" id="highloadblock-import"
+                                       value="{'type':'highloadblock','mode':'import'}">
                             </td>
                             <td>
                                 <label for="highloadblock-import"><?= GetMessage('WC_DEBUG1C_HIGHLOADBLOCK_IMPORT') ?></label>
@@ -58,29 +59,30 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="debug-mode" id="exchange-order" value="exchange-order">
+                                <input type="radio" name="type-mode" id="exchange-order" value="{'type':'sale','mode':'exchange-order'}">
                             </td>
                             <td>
                                 <label for="exchange-order"><?= GetMessage('WC_DEBUG1C_EXCHANGE_ORDER') ?></label>
                                 <label>
-                                    <input type="text" placeholder="<?= GetMessage('WC_DEBUG1C_ORDER_ID') ?>">
+                                    <input type="text" name="exchange-order-id"
+                                           placeholder="<?= GetMessage('WC_DEBUG1C_ORDER_ID') ?>">
                                 </label>
                             </td>
                         </tr>
                     <? } ?>
                     <tr>
                         <td>
-                            <input type="radio" name="debug-mode" id="sale-export" value="sale-export">
+                            <input type="radio" name="type-mode" id="sale-export" value="{'type':'sale','mode':'export'}">
                         </td>
                         <td>
                             <label for="sale-export"><?= GetMessage('WC_DEBUG1C_SALE_EXPORT') ?></label>
                             <label>
-                                <input type="text"
+                                <input type="text" name="export-order-id"
                                        placeholder="<?= GetMessage('WC_DEBUG1C_SALE_EXPORT_ORDER_ID') ?>">
                             </label>
                             Ver.
                             <label>
-                                <select>
+                                <select name="version">
                                     <option value="2.05">2.05</option>
                                     <option value="2.09" selected>2.09</option>
                                     <option value="2.10">2.10</option>
@@ -91,7 +93,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <input type="radio" name="debug-mode" id="sale-info" value="sale-info">
+                            <input type="radio" name="type-mode" id="sale-info" value="{'type':'sale','mode':'info'}">
                         </td>
                         <td>
                             <label for="sale-info"><?= GetMessage('WC_DEBUG1C_SALE_INFO') ?></label>

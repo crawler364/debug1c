@@ -6,13 +6,15 @@ use Bitrix\Main\Web\HttpClient;
 
 class WCDebug1CAjaxController extends \Bitrix\Main\Engine\Controller
 {
-    private string $tmpDir;
-    private string $logFile;
-    private string $ordersFile;
-    private string $infoFile;
-    private array $data;
-    private string $url;
-    private HttpClient $http;
+    private $tmpDir;
+    private $logFile;
+    private $ordersFile;
+    private $infoFile;
+    private $data;
+    private $url;
+    private $http;
+    private $sessid;
+    private $log;
 
     public function __construct(Request $request = null)
     {
@@ -21,75 +23,62 @@ class WCDebug1CAjaxController extends \Bitrix\Main\Engine\Controller
         Bitrix\Main\Loader::includeModule('sale');
         Bitrix\Main\Localization\Loc::loadMessages(__FILE__);
 
+        $protocol = CMain::IsHTTPS() ? "https://" : "http://";
         $this->tmpDir = "{$_SERVER['DOCUMENT_ROOT']}/upload/tmp/debug1c";
         $this->logFile = "$tmpDir/log.txt";
         $this->ordersFile = "$tmpDir/orders.xml";
         $this->infoFile = "$tmpDir/info.xml";
         $this->data = Bitrix\Main\Context::getCurrent()->getRequest()->toArray();
-        $protocol = CMain::IsHTTPS() ? "https://" : "http://";
         $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['kernelDir']}/admin/1c_exchange.php";
-        $this->http = new HttpClient();
-        $this->http->setAuthorization($this->login, $this->password);
-        $this->http->setCookies(['PHPSESSID' => uniqid(), 'XDEBUG_SESSION' => 'PHPSTORM']);
     }
 
     public function configureActions(): array
     {
         return [
-            'handler' => [
+            'init' => [
                 'prefilters' => [], 'postfilters' => [],
             ],
         ];
     }
 
-    public function handlerAction(): void
+    public function initAction(): void
     {
-        if (!mkdir($this->tmpDir) && !is_dir($this->tmpDir)) {
-            throw new Bitrix\Main\SystemException(Loc::getMessage('WC_DEBUG1C_DIRECTORY_CREATE_ERROR', ['#DIR#' => $tmpDir]));
-        }
+        $this->createHttpClient();
+        $this->createTmpDirectory();
+        $this->httpCheckAuth();
+        $this->handler();
+        $this->deleteTmpDirectory();
+    }
 
-        file_put_contents($this->logFile, '');
-        file_put_contents($this->ordersFile, '');
-        file_put_contents($this->infoFile, '');
-
-        $this->checkAuth();
-
-        if ($this->mode === 'import' || $this->mode === 'exchangeOrder1C') {
-            global $USER;
-            if (!$USER->IsAdmin()) {
-                $this->add2log($this->getMessage('WC_UNAUTHORIZED'));
-                $this->add2log($this->getMessage('WC_DONE'));
-                exit;
-            }
-        }
-
+    private function handler(): void
+    {
         switch ($this->data['type']) {
             case 'catalog':
                 switch ($this->data['mode']) {
-                    case 'import':
-                        // $this->init();
+                    case 'modeImport':
+                        // $this->modeInit(); todo в параметр
                         if (!$file = $this->getImportFile('1c_catalog')) {
                             $this->add2log($this->getMessage('WC_FILE_NOT_FOUND'));
                             break;
                         }
                         $this->add2log($this->getMessage('WC_IMPORTING_FILE', ['#FILE#' => $file]));
-                        $this->import($file);
+                        $this->modeImport($file);
                         break;
                 }
                 break;
             case 'sale':
                 switch ($this->data['mode']) {
                     case 'import':
-                        // $this->init();
+                        // $this->modeInit(); todo в параметр
                         if (!$file = $this->getImportFile('1c_exchange')) {
                             $this->add2log($this->getMessage('WC_FILE_NOT_FOUND'));
                             break;
                         }
                         $this->add2log($this->getMessage('WC_IMPORTING_FILE', ['#FILE#' => $file]));
-                        $this->import($file);
+                        $this->modeImport($file);
                         break;
                     case 'query':
-                        $this->query();
+                        $this->modeQuery();
                         break;
                     case'info':
                         $this->info();
@@ -121,20 +110,20 @@ class WCDebug1CAjaxController extends \Bitrix\Main\Engine\Controller
                 }
                 break;
             case 'reference':
-                // $this->init();
+                // $this->modeInit(); todo в параметр
                 if (!$file = $this->getImportFile('1c_highloadblock')) {
                     $this->add2log($this->getMessage('WC_FILE_NOT_FOUND'));
                     break;
                 }
                 $this->add2log($this->getMessage('WC_IMPORTING_FILE', ['#FILE#' => $file]));
-                $this->import($file);
+                $this->modeImport($file);
                 break;
         }
 
         $this->add2log($this->getMessage('WC_DONE'));
     }
 
-    private function checkAuth(): void
+    private function httpCheckAuth(): void
     {
         $url = "$this->url?type={$this->data['type']}&mode=checkauth";
         $get = $this->convertEncoding($this->http->get($url));
@@ -147,7 +136,7 @@ class WCDebug1CAjaxController extends \Bitrix\Main\Engine\Controller
         }
     }
 
-    private function init2(): void
+    private function modeInit(): void
     {
         $version = $this->version ? "version={$this->data['version']}" : '';
         $url = "$this->url?type={$this->data['type']}&mode=init&sessid=$this->sessid&$version";
@@ -156,20 +145,20 @@ class WCDebug1CAjaxController extends \Bitrix\Main\Engine\Controller
         }
     }
 
-    private function import($file): void
+    private function modeImport($file): void
     {
         $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&filename=$file";
         $get = $this->convertEncoding($this->http->get($url));
         preg_match('/progress/', $get, $match);
         $this->add2log($this->getMessage('WC_REPLACE', ['#REPLACE#' => $get]));
         if ($match) {
-            $this->import($file);
+            $this->modeImport($file);
         }
     }
 
-    private function query(): void
+    private function modeQuery(): void
     {
-        $this->init();
+        $this->modeInit();
         $orderId = $this->data['orderId'] ? "orderId=$this->orderId" : '';
         $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&$orderId";
         $get = $this->http->get($url);
@@ -214,5 +203,30 @@ class WCDebug1CAjaxController extends \Bitrix\Main\Engine\Controller
     private function convertEncoding($str): string
     {
         return mb_convert_encoding($str, 'UTF-8', 'windows-1251');
+    }
+
+    private function createHttpClient(): void
+    {
+        $unsignedParameters = $this->getUnsignedParameters();
+
+        $this->http = new HttpClient();
+        $this->http->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
+        $this->http->setCookies(['PHPSESSID' => uniqid(), 'XDEBUG_SESSION' => 'PHPSTORM']);
+    }
+
+    private function createTmpDirectory(): void
+    {
+        if (!mkdir($this->tmpDir) && !is_dir($this->tmpDir)) {
+            throw new Bitrix\Main\SystemException(Loc::getMessage('WC_DEBUG1C_DIRECTORY_CREATE_ERROR', ['#DIR#' => $tmpDir]));
+        }
+
+        file_put_contents($this->logFile, '');
+        file_put_contents($this->ordersFile, '');
+        file_put_contents($this->infoFile, '');
+    }
+
+    private function deleteTmpDirectory(): void
+    {
+        Bitrix\Main\IO\Directory::deleteDirectory($this->tmpDir);
     }
 }
