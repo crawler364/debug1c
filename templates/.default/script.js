@@ -2,7 +2,7 @@ class WCDebug1C {
     constructor(params) {
         this.params = params;
         this.wcDebug1c = BX('wc-debug1c');
-        this.data = BX.findChild(this.wcDebug1c, {tag: 'pre', attribute: {'data-type': 'debug-data'}}, true, false);
+        this.data = BX.findChild(this.wcDebug1c, {tag: 'pre', attribute: {'data-type': 'log'}}, true, false);
         BX.bindDelegate(this.wcDebug1c, 'submit', {
             tag: 'form',
             attribute: {'name': 'debug'}

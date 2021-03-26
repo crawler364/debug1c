@@ -16,10 +16,10 @@
                 <table>
                     <tr>
                         <td>
-                            <label for="debug-dir"></label>
+                            <label for="dir"></label>
                         </td>
                         <td>
-                            <select id="debug-dir" name="debug-dir">
+                            <select id="dir" name="dir">
                                 <option value="<?= GetMessage('WC_DEBUG1C_DIR_BITRIX') ?>" selected>
                                     <?= GetMessage('WC_DEBUG1C_DIR_BITRIX') ?>
                                 </option>
@@ -34,7 +34,7 @@
                         <tr>
                             <td>
                                 <input type="radio" name="type-mode" id="catalog-import"
-                                       value="{'type':'catalog','mode':'import'}">
+                                       value='{"type":"catalog","mode":"import"}'>
                             </td>
                             <td>
                                 <label for="catalog-import"><?= GetMessage('WC_DEBUG1C_CATALOG_IMPORT') ?></label>
@@ -42,7 +42,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="sale-import" value="{'type':'sale','mode':'import'}">
+                                <input type="radio" name="type-mode" id="sale-import" value='{"type":"sale","mode":"import"}'>
                             </td>
                             <td>
                                 <label for="sale-import"><?= GetMessage('WC_DEBUG1C_SALE_IMPORT') ?></label>
@@ -51,7 +51,7 @@
                         <tr>
                             <td>
                                 <input type="radio" name="type-mode" id="highloadblock-import"
-                                       value="{'type':'highloadblock','mode':'import'}">
+                                       value='{"type":"highloadblock","mode":"import"}'>
                             </td>
                             <td>
                                 <label for="highloadblock-import"><?= GetMessage('WC_DEBUG1C_HIGHLOADBLOCK_IMPORT') ?></label>
@@ -59,7 +59,7 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="exchange-order" value="{'type':'sale','mode':'exchange-order'}">
+                                <input type="radio" name="type-mode" id="exchange-order" value='{"type":"sale","mode":"exchange-order"}'>
                             </td>
                             <td>
                                 <label for="exchange-order"><?= GetMessage('WC_DEBUG1C_EXCHANGE_ORDER') ?></label>
@@ -72,7 +72,7 @@
                     <? } ?>
                     <tr>
                         <td>
-                            <input type="radio" name="type-mode" id="sale-export" value="{'type':'sale','mode':'export'}">
+                            <input type="radio" name="type-mode" id="sale-export" value='{"type":"sale","mode":"export"}'>
                         </td>
                         <td>
                             <label for="sale-export"><?= GetMessage('WC_DEBUG1C_SALE_EXPORT') ?></label>
@@ -93,7 +93,7 @@
                     </tr>
                     <tr>
                         <td>
-                            <input type="radio" name="type-mode" id="sale-info" value="{'type':'sale','mode':'info'}">
+                            <input type="radio" name="type-mode" id="sale-info" value='{"type":"sale","mode":"info"}'>
                         </td>
                         <td>
                             <label for="sale-info"><?= GetMessage('WC_DEBUG1C_SALE_INFO') ?></label>
@@ -109,7 +109,7 @@
     </tr>
     <tr>
         <td>
-            <pre data-type="debug-data"></pre>
+            <pre data-type="log"></pre>
         </td>
     </tr>
 </table>
