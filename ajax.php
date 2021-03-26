@@ -18,6 +18,7 @@ class WCDebug1CAjaxController extends Controller
     private $http;
     private $sessid;
     private $log;
+    private $protocol;
 
     public function __construct(Request $request = null)
     {
@@ -26,14 +27,10 @@ class WCDebug1CAjaxController extends Controller
         Bitrix\Main\Loader::includeModule('sale');
         Bitrix\Main\Localization\Loc::loadMessages(__FILE__);
 
-        $protocol = CMain::IsHTTPS() ? "https://" : "http://";
-        $this->tmpDir = "{$_SERVER['DOCUMENT_ROOT']}/upload/tmp/debug1c";
+        $this->tmpDir = "/upload/tmp/debug1c";
         $this->logFile = "$this->tmpDir/log.txt";
         $this->ordersFile = "$this->tmpDir/orders.xml";
         $this->infoFile = "$this->tmpDir/info.xml";
-        $this->data = Bitrix\Main\Context::getCurrent()->getRequest()->toArray();
-        $this->data = array_merge($this->data, Json::decode(htmlspecialcharsback($this->data['type-mode'])));
-        $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['dir']}/admin/1c_exchange.php";
     }
 
     public function configureActions(): array
@@ -42,15 +39,28 @@ class WCDebug1CAjaxController extends Controller
             'init' => [
                 'prefilters' => [], 'postfilters' => [],
             ],
+            'getLog' => [
+                'prefilters' => [], 'postfilters' => [],
+            ],
         ];
     }
 
     public function initAction(): void
     {
+        $this->protocol = CMain::IsHTTPS() ? "https://" : "http://";
+        $this->data = Bitrix\Main\Context::getCurrent()->getRequest()->toArray();
+        $this->data = array_merge($this->data, Json::decode(htmlspecialcharsback($this->data['type-mode'])));
+        $this->url = "$this->protocol{$_SERVER['SERVER_NAME']}/{$this->data['dir']}/admin/1c_exchange.php";
+
         $this->createHttpClient();
         $this->createTmpDirectory();
         $this->httpCheckAuth();
         $this->handler();
+    }
+
+    public function getLogAction()
+    {
+        return file_get_contents("{$_SERVER['DOCUMENT_ROOT']}$this->logFile");
     }
 
     private function handler(): void
@@ -84,7 +94,7 @@ class WCDebug1CAjaxController extends Controller
                         $this->modeQuery();
                         break;
                     case'info':
-                        $this->info();
+                        $this->modeInfo();
                         break;
                     case'exchangeOrder1C':
                         $this->add2log(Loc::getMessage('WC_DEBUG1C_SEARCHING_ORDER'));
@@ -162,18 +172,18 @@ class WCDebug1CAjaxController extends Controller
     private function modeQuery(): void
     {
         $this->modeInit();
-        $orderId = $this->data['orderId'] ? "orderId=$this->orderId" : '';
+        $orderId = $this->data['query-order-id'] ? "orderId=$this->data['query-order-id']" : '';
         $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&$orderId";
         $get = $this->http->get($url);
-        file_put_contents($this->ordersFile, $get);
-        Loc::getMessage(5, $this->ordersFile);
+        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->ordersFile", $get);
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->infoFile]));
     }
 
-    private function info(): void
+    private function modeInfo(): void
     {
         $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid";
         $get = $this->http->get($url);
-        file_put_contents($this->infoFile, $get);
+        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->infoFile", $get);
         $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->infoFile]));
     }
 
@@ -195,7 +205,7 @@ class WCDebug1CAjaxController extends Controller
     {
         $str = preg_replace("/[\\n]/", " ", $str);
         $this->log .= date('d.m.y H:i:s') . ": $str \n";
-        file_put_contents($this->logFile, $this->log);
+        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->logFile", $this->log);
     }
 
     private function getMessage($code, $replace = null, $language = 'ru'): string
@@ -205,7 +215,7 @@ class WCDebug1CAjaxController extends Controller
 
     private function convertEncoding($str): string
     {
-        return mb_convert_encoding($str, 'UTF-8', 'windows-1251');
+        return mb_convert_encoding($str, 'windows-1251', 'UTF-8');
     }
 
     private function createHttpClient(): void
@@ -219,12 +229,14 @@ class WCDebug1CAjaxController extends Controller
 
     private function createTmpDirectory(): void
     {
-        if (!mkdir($this->tmpDir) && !is_dir($this->tmpDir)) {
+        $tmpDir = "{$_SERVER['DOCUMENT_ROOT']}$this->tmpDir";
+
+        if (!mkdir($tmpDir) && !is_dir($tmpDir)) {
             throw new Bitrix\Main\SystemException(Loc::getMessage('WC_DEBUG1C_DIRECTORY_CREATE_ERROR', ['#DIR#' => $tmpDir]));
         }
 
-        file_put_contents($this->logFile, '');
-        file_put_contents($this->ordersFile, '');
-        file_put_contents($this->infoFile, '');
+        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->logFile", '');
+        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->ordersFile", '');
+        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->infoFile", '');
     }
 }

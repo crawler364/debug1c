@@ -72,13 +72,13 @@
                     <? } ?>
                     <tr>
                         <td>
-                            <input type="radio" name="type-mode" id="sale-export" value='{"type":"sale","mode":"export"}'>
+                            <input type="radio" name="type-mode" id="sale-query" value='{"type":"sale","mode":"query"}'>
                         </td>
                         <td>
-                            <label for="sale-export"><?= GetMessage('WC_DEBUG1C_SALE_EXPORT') ?></label>
+                            <label for="sale-query"><?= GetMessage('WC_DEBUG1C_SALE_QUERY') ?></label>
                             <label>
-                                <input type="text" name="export-order-id"
-                                       placeholder="<?= GetMessage('WC_DEBUG1C_SALE_EXPORT_ORDER_ID') ?>">
+                                <input type="text" name="query-order-id"
+                                       placeholder="<?= GetMessage('WC_DEBUG1C_SALE_QUERY_ORDER_ID') ?>">
                             </label>
                             Ver.
                             <label>

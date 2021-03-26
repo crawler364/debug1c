@@ -2,7 +2,7 @@ class WCDebug1C {
     constructor(params) {
         this.params = params;
         this.wcDebug1c = BX('wc-debug1c');
-        this.data = BX.findChild(this.wcDebug1c, {tag: 'pre', attribute: {'data-type': 'log'}}, true, false);
+        this.log = BX.findChild(this.wcDebug1c, {tag: 'pre', attribute: {'data-type': 'log'}}, true, false);
         BX.bindDelegate(this.wcDebug1c, 'submit', {
             tag: 'form',
             attribute: {'name': 'debug'}
@@ -27,10 +27,26 @@ class WCDebug1C {
     }
 
     parseLog() {
-        setTimeout(function () {
-            BX.ajax.insertToNode('log.txt', this.data);
-        }, 500);
+        BX.ajax.runComponentAction('wc:debug1c', 'getLog', {
+            mode: 'ajax',
+        }).then((response) => {
+            console.log(response.data);
+            BX.adjust(
+                this.log,
+                {html:response.data}
+            );
+        }, function (response) {
+            console.log(response);
+            // todo обработка ошибок
+        });
 
+        /* console.log(this.log);
+         setTimeout(function () {
+             BX.ajax.insertToNode('/upload/tmp/debug1c/log.txt', this.log);
+         }, 1000);
+
+         console.log(this.log);
+ */
 
         /*BX.ajax({
             url: 'log.txt',
