@@ -208,11 +208,6 @@ class WCDebug1CAjaxController extends Controller
         file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->logFile", $this->log);
     }
 
-    private function getMessage($code, $replace = null, $language = 'ru'): string
-    {
-        return Loc::getMessage($code, $replace, $language);
-    }
-
     private function convertEncoding($str): string
     {
         return mb_convert_encoding($str, 'windows-1251', 'UTF-8');
@@ -224,7 +219,9 @@ class WCDebug1CAjaxController extends Controller
 
         $this->http = new HttpClient();
         $this->http->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
-        $this->http->setCookies(['PHPSESSID' => uniqid(), 'XDEBUG_SESSION' => 'PHPSTORM']);
+        $this->http->get($this->url);
+        $cookie = $this->http->getCookies()->toArray();
+        $this->http->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']);
     }
 
     private function createTmpDirectory(): void
