@@ -17,3 +17,7 @@
 #wc-debug1c form[name='debug'] button {
     margin: 20px 0;
 }
+
+#wc-debug1c form[name='debug'] button:active {
+    background: #CCCCCC;
+}

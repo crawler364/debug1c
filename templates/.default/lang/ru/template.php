@@ -1,5 +1,5 @@
 <?php
-$MESS['WC_DEBUG1C_LOGOUT'] = 'Выход';
+$MESS['WC_DEBUG1C_LOGOUT'] = 'Logout';
 $MESS['WC_DEBUG1C_DIR_BITRIX'] = 'bitrix';
 $MESS['WC_DEBUG1C_DIR_LOCAL'] = 'local';
 $MESS['WC_DEBUG1C_URL'] = '/admin/1c_exchange.php';
@@ -11,4 +11,4 @@ $MESS['WC_DEBUG1C_ORDER_ID'] = 'Order ID';
 $MESS['WC_DEBUG1C_SALE_QUERY'] = 'Sale Query';
 $MESS['WC_DEBUG1C_SALE_QUERY_ORDER_ID'] = 'Order ID (opt)';
 $MESS['WC_DEBUG1C_SALE_INFO'] = 'Sale Info';
-$MESS['WC_DEBUG1C_SUBMIT_BUTTON'] = 'Выполнить';
+$MESS['WC_DEBUG1C_SUBMIT_BUTTON'] = 'Send';

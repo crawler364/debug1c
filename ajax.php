@@ -79,7 +79,6 @@ class WCDebug1CAjaxController extends Controller
                     case 'import':
                         // $this->modeInit(); todo в параметр
                         if (!$file = $this->getImportFile('1c_catalog')) {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_NOT_FOUND'));
                             break;
                         }
                         $this->add2log(Loc::getMessage('WC_DEBUG1C_IMPORTING_FILE', ['#FILE#' => $file]));
@@ -92,7 +91,6 @@ class WCDebug1CAjaxController extends Controller
                     case 'import':
                         // $this->modeInit(); todo в параметр
                         if (!$file = $this->getImportFile('1c_exchange')) {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_NOT_FOUND'));
                             break;
                         }
                         $this->add2log(Loc::getMessage('WC_DEBUG1C_IMPORTING_FILE', ['#FILE#' => $file]));
@@ -106,7 +104,7 @@ class WCDebug1CAjaxController extends Controller
                         break;
                     case'exchange-order':
                         $this->add2log(Loc::getMessage('WC_DEBUG1C_SEARCHING_ORDER'));
-                        if ($order = Order::load($this->data['exchange-order-id'])) {
+                        if ($this->data['exchange-order-id'] > 0 && $order = Order::load($this->data['exchange-order-id'])) {
                             $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_FOUND', ['#ORDER_ID#' => $this->data['exchange-order-id']]));
                         } else {
                             $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_NOT_FOUND', ['#ORDER_ID#' => $this->data['exchange-order-id']]));
@@ -133,7 +131,6 @@ class WCDebug1CAjaxController extends Controller
             case 'reference':
                 // $this->modeInit(); todo в параметр
                 if (!$file = $this->getImportFile('1c_highloadblock')) {
-                    $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_NOT_FOUND'));
                     break;
                 }
                 $this->add2log(Loc::getMessage('WC_DEBUG1C_IMPORTING_FILE', ['#FILE#' => $file]));
@@ -206,6 +203,7 @@ class WCDebug1CAjaxController extends Controller
             }
         }
 
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_NOT_FOUND'));
         return null;
     }
 

@@ -9,15 +9,15 @@ class WCDebug1C {
         }, this.handler.bind(this));
     }
 
-    handler(e) {
+    async handler(e) {
         BX.PreventDefault(e);
         let formData = new FormData(e.target);
 
-        BX.ajax.runComponentAction('wc:debug1c', 'prepareTmpDirectory', {
-            mode: 'ajax'
-        }).then((response) => {
-            this.parseLogFile(response.data);
+        let logFile = await BX.ajax.runComponentAction('wc:debug1c', 'prepareTmpDirectory', {
+            mode: 'ajax',
         });
+
+        this.parseLogFile(logFile.data);
 
         BX.ajax.runComponentAction('wc:debug1c', 'init', {
             mode: 'ajax',

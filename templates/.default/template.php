@@ -51,7 +51,7 @@
                         <tr>
                             <td>
                                 <input type="radio" name="type-mode" id="highloadblock-import"
-                                       value='{"type":"highloadblock","mode":"import"}'>
+                                       value='{"type":"reference"}'>
                             </td>
                             <td>
                                 <label for="highloadblock-import"><?= GetMessage('WC_DEBUG1C_HIGHLOADBLOCK_IMPORT') ?></label>
