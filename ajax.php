@@ -48,11 +48,15 @@ class WCDebug1CAjaxController extends Controller
     {
         $protocol = CMain::IsHTTPS() ? "https://" : "http://";
         $this->data = Bitrix\Main\Context::getCurrent()->getRequest()->toArray();
-        $this->data = array_merge($this->data, Json::decode(htmlspecialcharsback($this->data['type-mode'])));
+        if ($this->data['type-mode'] && $dataType = Json::decode(htmlspecialcharsback($this->data['type-mode']))) {
+            $this->data = array_merge($this->data, $dataType);
+        } else {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_MODE_NOT_SELECTED'));
+        }
         $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['dir']}/admin/1c_exchange.php";
 
         $this->createHttpClient();
-        $this->httpCheckAuth();
+        $this->modeCheckAuth();
         $this->handler();
     }
 
@@ -120,9 +124,9 @@ class WCDebug1CAjaxController extends Controller
                         $date = $order->getField('DATE_UPDATE');
                         $newDateUpdate = $date->toString();
                         if ($oldDateUpdate !== $newDateUpdate && $order->getField('UPDATED_1C') === 'N') {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_MARKED', ['#ORDER_ID#' =>  $this->data['query-order-id'], '#DATE#' => $newDateUpdate]));
+                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_MARKED', ['#ORDER_ID#' => $this->data['query-order-id'], '#DATE#' => $newDateUpdate]));
                         } else {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_DONT_UPDATED', ['#ORDER_ID#' =>  $this->data['query-order-id']]));
+                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_DONT_UPDATED', ['#ORDER_ID#' => $this->data['query-order-id']]));
                             break;
                         }
                         break;
@@ -141,7 +145,7 @@ class WCDebug1CAjaxController extends Controller
         $this->add2log(Loc::getMessage('WC_DEBUG1C_DONE'));
     }
 
-    private function httpCheckAuth(): void
+    private function modeCheckAuth(): void
     {
         $url = "$this->url?type={$this->data['type']}&mode=checkauth";
         $get = $this->convertEncoding($this->http->get($url));
@@ -216,7 +220,7 @@ class WCDebug1CAjaxController extends Controller
 
     private function convertEncoding($str): string
     {
-        return mb_convert_encoding($str,'UTF-8', 'windows-1251');
+        return mb_convert_encoding($str, 'UTF-8', 'windows-1251'); // todo в параметр
     }
 
     private function createHttpClient(): void
@@ -227,6 +231,6 @@ class WCDebug1CAjaxController extends Controller
         $this->http->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
         $this->http->get($this->url);
         $cookie = $this->http->getCookies()->toArray();
-        $this->http->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']);
+        $this->http->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
     }
 }

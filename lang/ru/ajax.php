@@ -11,3 +11,4 @@ $MESS['WC_DEBUG1C_HTTP_CLIENT_INIT_SUCCESS'] = "http client initialisation succe
 $MESS['WC_DEBUG1C_SEARCHING_ORDER'] = "searching order..";
 $MESS['WC_DEBUG1C_ORDER_FOUND'] = "order ##ORDER_ID# found";
 $MESS['WC_DEBUG1C_ORDER_MARKED'] = "order was marked for an exchange";
+$MESS['WC_DEBUG1C_MODE_NOT_SELECTED'] = "error - mode not selected";
