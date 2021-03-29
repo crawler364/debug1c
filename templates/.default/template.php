@@ -1,3 +1,9 @@
+<?
+if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) {
+    die();
+}
+$this->setFrameMode(false);
+?>
 <table id="wc-debug1c">
     <tr>
         <td>
@@ -42,7 +48,8 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="sale-import" value='{"type":"sale","mode":"import"}'>
+                                <input type="radio" name="type-mode" id="sale-import"
+                                       value='{"type":"sale","mode":"import"}'>
                             </td>
                             <td>
                                 <label for="sale-import"><?= GetMessage('WC_DEBUG1C_SALE_IMPORT') ?></label>
@@ -59,7 +66,8 @@
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="exchange-order" value='{"type":"sale","mode":"exchange-order"}'>
+                                <input type="radio" name="type-mode" id="exchange-order"
+                                       value='{"type":"sale","mode":"exchange-order"}'>
                             </td>
                             <td>
                                 <label for="exchange-order"><?= GetMessage('WC_DEBUG1C_EXCHANGE_ORDER') ?></label>
