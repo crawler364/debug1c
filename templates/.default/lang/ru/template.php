@@ -12,3 +12,4 @@ $MESS['WC_DEBUG1C_SALE_QUERY'] = 'Sale Query';
 $MESS['WC_DEBUG1C_SALE_QUERY_ORDER_ID'] = 'Order ID (opt)';
 $MESS['WC_DEBUG1C_SALE_INFO'] = 'Sale Info';
 $MESS['WC_DEBUG1C_SUBMIT_BUTTON'] = 'Send';
+$MESS['WC_DEBUG1C_ACCESS_DENIED'] = 'Access denied. Login as admin.';
