@@ -32,6 +32,7 @@ class WCDebug1C {
         BX.ajax({
             url: `${logFile}`,
             dataType: 'html',
+            cache: false,
             onsuccess: (response) => {
                 BX.adjust(this.log, {html: response});
                 if (response.search('done') === -1) {
