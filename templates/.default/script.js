@@ -11,6 +11,8 @@ class WCDebug1C {
 
     async handler(e) {
         BX.PreventDefault(e);
+        BX.showWait();
+
         let formData = new FormData(e.target);
 
         let logFile = await BX.ajax.runComponentAction('wc:debug1c', 'prepareTmpDirectory', {
@@ -37,6 +39,8 @@ class WCDebug1C {
                 BX.adjust(this.log, {html: response});
                 if (response.search('done') === -1) {
                     this.parseLogFile(logFile);
+                } else {
+                    BX.closeWait();
                 }
             }
         });
