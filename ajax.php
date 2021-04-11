@@ -48,12 +48,12 @@ class WCDebug1CAjaxController extends Controller
     {
         $protocol = CMain::IsHTTPS() ? "https://" : "http://";
         $this->data = Bitrix\Main\Context::getCurrent()->getRequest()->toArray();
-        if ($this->data['type-mode'] && $dataType = Json::decode(htmlspecialcharsback($this->data['type-mode']))) {
+        if ($this->data['TYPE_MODE'] && $dataType = Json::decode(htmlspecialcharsback($this->data['TYPE_MODE']))) {
             $this->data = array_merge($this->data, $dataType);
         } else {
             $this->add2log(Loc::getMessage('WC_DEBUG1C_MODE_NOT_SELECTED'));
         }
-        $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['dir']}/admin/1c_exchange.php";
+        $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['DIR']}/admin/1c_exchange.php";
 
         $this->createHttpClient();
         $this->modeCheckAuth();
@@ -124,9 +124,9 @@ class WCDebug1CAjaxController extends Controller
                         $date = $order->getField('DATE_UPDATE');
                         $newDateUpdate = $date->toString();
                         if ($oldDateUpdate !== $newDateUpdate && $order->getField('UPDATED_1C') === 'N') {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_MARKED', ['#ORDER_ID#' => $this->data['query-order-id'], '#DATE#' => $newDateUpdate]));
+                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_MARKED', ['#ORDER_ID#' => $this->data['QUERY_ORDER_ID'], '#DATE#' => $newDateUpdate]));
                         } else {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_DONT_UPDATED', ['#ORDER_ID#' => $this->data['query-order-id']]));
+                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_DONT_UPDATED', ['#ORDER_ID#' => $this->data['QUERY_ORDER_ID']]));
                             break;
                         }
                         break;
@@ -160,7 +160,7 @@ class WCDebug1CAjaxController extends Controller
 
     private function modeInit(): void
     {
-        $version = $this->data['version'] ? "version={$this->data['version']}" : '';
+        $version = $this->data['VERSION'] ? "version={$this->data['VERSION']}" : '';
         $url = "$this->url?type={$this->data['type']}&mode=init&sessid=$this->sessid&$version";
         if ($init = $this->convertEncoding($this->http->get($url))) {
             $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_INIT_SUCCESS'));
@@ -181,7 +181,7 @@ class WCDebug1CAjaxController extends Controller
     private function modeQuery(): void
     {
         $this->modeInit();
-        $orderId = $this->data['query-order-id'] ? "orderId={$this->data['query-order-id']}" : '';
+        $orderId = $this->data['QUERY_ORDER_ID'] ? "orderId={$this->data['QUERY_ORDER_ID']}" : '';
         $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&$orderId";
         $get = $this->http->get($url);
         file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->ordersFile", $get);

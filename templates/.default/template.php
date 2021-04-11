@@ -22,7 +22,7 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
                                 <label for="dir"></label>
                             </td>
                             <td>
-                                <select id="dir" name="dir">
+                                <select id="dir" name="DIR">
                                     <option value="<?= GetMessage('WC_DEBUG1C_DIR_BITRIX') ?>" selected>
                                         <?= GetMessage('WC_DEBUG1C_DIR_BITRIX') ?>
                                     </option>
@@ -35,7 +35,7 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="catalog-import"
+                                <input type="radio" name="TYPE_MODE" id="catalog-import"
                                        value='{"type":"catalog","mode":"import"}'>
                             </td>
                             <td>
@@ -44,7 +44,7 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="sale-import"
+                                <input type="radio" name="TYPE_MODE" id="sale-import"
                                        value='{"type":"sale","mode":"import"}'>
                             </td>
                             <td>
@@ -53,7 +53,7 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="highloadblock-import"
+                                <input type="radio" name="TYPE_MODE" id="highloadblock-import"
                                        value='{"type":"reference"}'>
                             </td>
                             <td>
@@ -62,7 +62,7 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="exchange-order"
+                                <input type="radio" name="TYPE_MODE" id="exchange-order"
                                        value='{"type":"sale","mode":"exchange-order"}'>
                             </td>
                             <td>
@@ -75,18 +75,18 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="sale-query"
+                                <input type="radio" name="TYPE_MODE" id="sale-query"
                                        value='{"type":"sale","mode":"query"}'>
                             </td>
                             <td>
                                 <label for="sale-query"><?= GetMessage('WC_DEBUG1C_SALE_QUERY') ?></label>
                                 <label>
-                                    <input type="text" name="query-order-id"
+                                    <input type="text" name="QUERY_ORDER_ID"
                                            placeholder="<?= GetMessage('WC_DEBUG1C_SALE_QUERY_ORDER_ID') ?>">
                                 </label>
                                 Ver.
                                 <label>
-                                    <select name="version">
+                                    <select name="VERSION">
                                         <option value="2.05">2.05</option>
                                         <option value="2.09" selected>2.09</option>
                                         <option value="2.10">2.10</option>
@@ -97,7 +97,7 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
                         </tr>
                         <tr>
                             <td>
-                                <input type="radio" name="type-mode" id="sale-info"
+                                <input type="radio" name="TYPE_MODE" id="sale-info"
                                        value='{"type":"sale","mode":"info"}'>
                             </td>
                             <td>
