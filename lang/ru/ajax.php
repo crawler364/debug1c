@@ -1,7 +1,7 @@
 <?php
 $MESS['WC_DEBUG1C_FILE_NOT_FOUND'] = "error - import file not found";
 $MESS['WC_DEBUG1C_ORDER_NOT_FOUND'] = "error - order ##ORDER_ID# not found";
-$MESS['WC_DEBUG1C_ORDER_DONT_UPDATED'] = "error - order ##ORDER_ID# don't updated";
+$MESS['WC_DEBUG1C_ORDER_NOT_UPDATED'] = "error - order ##ORDER_ID# don't updated";
 $MESS['WC_DEBUG1C_REPLACE'] = "#REPLACE#";
 $MESS['WC_DEBUG1C_DONE'] = "done";
 $MESS['WC_DEBUG1C_IMPORTING_FILE'] = "importing file #FILE#";
