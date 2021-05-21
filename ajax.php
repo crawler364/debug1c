@@ -57,9 +57,11 @@ class WCDebug1CAjaxController extends Controller
         }
         $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['DIR']}/admin/1c_exchange.php";
 
-        $this->createHttpClient();
-        $this->modeCheckAuth();
-        $this->handler();
+        if ($this->createHttpClient() && $this->modeCheckAuth()) {
+            $this->handler();
+        }
+
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_DONE'));
     }
 
     public function prepareTmpDirectoryAction(): string
@@ -141,21 +143,23 @@ class WCDebug1CAjaxController extends Controller
                 $this->modeImport($file);
                 break;
         }
-
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_DONE'));
     }
 
-    private function modeCheckAuth(): void
+    private function modeCheckAuth(): bool
     {
         $url = "$this->url?type={$this->data['type']}&mode=checkauth";
         $get = $this->convertEncoding($this->httpClient->get($url));
 
-        preg_match('/sessid=\K.*/', $get, $sessid);
+        preg_match('/sessid=(?!")\K.*/', $get, $sessid);
 
         if ($this->sessid = $sessid[0]) {
             $this->httpClient->setHeader('X-Bitrix-Csrf-Token', $this->sessid, true);
             $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_SUCCESS'));
+            return true;
         }
+
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_ERROR'));
+        return false;
     }
 
     private function modeInit(): void
@@ -230,13 +234,20 @@ class WCDebug1CAjaxController extends Controller
         return mb_convert_encoding($str, 'UTF-8', 'windows-1251'); // todo в параметр
     }
 
-    private function createHttpClient(): void
+    private function createHttpClient(): bool
     {
         $this->httpClient = new HttpClient();
         $unsignedParameters = $this->getUnsignedParameters();
         $this->httpClient->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
         $this->httpClient->get($this->url);
         $cookie = $this->httpClient->getCookies()->toArray();
-        $this->httpClient->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
+
+        if ($cookie['PHPSESSID']) {
+            $this->httpClient->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
+            return true;
+        }
+
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
+        return false;
     }
 }
