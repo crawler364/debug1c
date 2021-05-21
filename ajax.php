@@ -67,7 +67,7 @@ class WCDebug1CAjaxController extends Controller
         $tmpDir = "{$_SERVER['DOCUMENT_ROOT']}$this->tmpDir";
 
         if (!is_dir($tmpDir)) {
-            mkdir($tmpDir);
+            mkdir($tmpDir, 0777, true);
         }
 
         file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->logFile", '');
