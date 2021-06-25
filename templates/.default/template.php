@@ -5,7 +5,7 @@ if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) {
 $this->setFrameMode(false);
 
 if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
-    <table id="wc-debug1c">
+    <table id="debug1c" class="debug1c">
         <tr>
             <td>
                 <? echo "[{$arResult['USER_INFO']['ID']}] {$arResult['USER_INFO']['NAME']} {$arResult['USER_INFO']['LAST_NAME']} {$arResult['USER_INFO']['EMAIL']} "; ?>

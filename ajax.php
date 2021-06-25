@@ -46,9 +46,8 @@ class WCDebug1CAjaxController extends Controller
 
     public function initAction(): void
     {
-        $request = Bitrix\Main\Context::getCurrent()->getRequest();
-        $protocol = $request->isHttps() ? "https://" : "http://";
-        $this->data = $request->toArray();
+        $protocol = $this->request->isHttps() ? "https://" : "http://";
+        $this->data = $this->request->toArray();
 
         if ($this->data['TYPE_MODE'] && $dataType = Json::decode(htmlspecialcharsback($this->data['TYPE_MODE']))) {
             $this->data = array_merge($this->data, $dataType);
@@ -58,7 +57,7 @@ class WCDebug1CAjaxController extends Controller
         $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['DIR']}/admin/1c_exchange.php";
 
         if ($this->createHttpClient() && $this->modeCheckAuth()) {
-            $this->handler();
+            $this->controller();
         }
 
         $this->add2log(Loc::getMessage('WC_DEBUG1C_DONE'));
@@ -79,7 +78,7 @@ class WCDebug1CAjaxController extends Controller
         return $this->logFile;
     }
 
-    private function handler(): void
+    private function controller(): void
     {
         switch ($this->data['type']) {
             case 'catalog':
