@@ -19,18 +19,11 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
                     <table>
                         <tr>
                             <td>
-                                <label for="dir"></label>
+                                <label for="exchange-url"></label>
                             </td>
                             <td>
-                                <select id="dir" name="DIR">
-                                    <option value="<?= GetMessage('WC_DEBUG1C_DIR_BITRIX') ?>" selected>
-                                        <?= GetMessage('WC_DEBUG1C_DIR_BITRIX') ?>
-                                    </option>
-                                    <option value="<?= GetMessage('WC_DEBUG1C_DIR_LOCAL') ?>">
-                                        <?= GetMessage('WC_DEBUG1C_DIR_LOCAL') ?>
-                                    </option>
-                                </select>
-                                <?= GetMessage('WC_DEBUG1C_URL') ?>
+                                <input type="text" name="EXCHANGE_URL" id="exchange-url"
+                                       placeholder='/bitrix/admin/1c_exchange.php'>
                             </td>
                         </tr>
                         <tr>
@@ -126,6 +119,9 @@ if ($arResult['USER_INFO']['IS_AUTHORIZED']) { ?>
     BX.ready(() => {
         if (!window.hasOwnProperty('WCDebug1C')) {
             window.WCDebug1C = new WCDebug1C(<?=Bitrix\Main\Web\Json::encode([
+                'parameters' => [
+                        'logFile' => $arParams['LOG_FILE']
+                ],
                 'signedParameters' => $this->getComponent()->getSignedParameters(),
             ])?>);
         }
