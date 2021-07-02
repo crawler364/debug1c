@@ -1,13 +1,22 @@
 <?php
 
+namespace WC\Components;
+
+use Bitrix\Main\Engine\Action;
 use Bitrix\Main\Engine\Controller;
+use Bitrix\Main\Engine\Response\AjaxJson;
+use Bitrix\Main\Error;
 use Bitrix\Main\Request;
 use Bitrix\Main\Localization\Loc;
+use Bitrix\Main\Result;
 use Bitrix\Main\Web\HttpClient;
 use Bitrix\Main\Web\Json;
 use Bitrix\Sale\Order;
 
-class WCDebug1CAjaxController extends Controller
+Loc::loadMessages(__FILE__);
+Loc::loadMessages(__DIR__ . '/class.php');
+
+class Debug1CAjaxController extends Controller
 {
     private $tmpDir;
     private $logFile;
@@ -19,17 +28,40 @@ class WCDebug1CAjaxController extends Controller
     private $sessid;
     private $log;
 
+    /** @var Debug1C $class */
+    private $class;
+    /**
+     * @var mixed
+     */
+    private $exchangeUrl;
+
     public function __construct(Request $request = null)
     {
         parent::__construct($request);
 
-        Bitrix\Main\Loader::includeModule('sale');
-        Bitrix\Main\Localization\Loc::loadMessages(__FILE__);
+        \Bitrix\Main\Loader::includeModule('sale');
 
-        $this->tmpDir = "/upload/tmp/debug1c";
-        $this->logFile = "$this->tmpDir/log.txt";
-        $this->ordersFile = "$this->tmpDir/orders.xml";
-        $this->infoFile = "$this->tmpDir/info.xml";
+        $this->class = \CBitrixComponent::includeComponentClass('wc:debug1c');
+        $this->data = $this->getData();
+        if ($this->data['EXCHANGE_URL']) {
+            $this->exchangeUrl = $this->class::getPathExchangeUrl(false, $this->data['EXCHANGE_URL']);
+        } else {
+            $this->exchangeUrl = $this->class::getPathExchangeUrl(false);
+        }
+        $this->logFile = $this->class::getLogFile();
+    }
+
+    private function getData(): array
+    {
+        $data = $this->request->toArray() ?: [];
+
+        if ($data['TYPE_MODE'] && $dataType = Json::decode(htmlspecialcharsback($data['TYPE_MODE']))) {
+            $data = array_merge($data, $dataType);
+        } else {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_MODE_NOT_SELECTED'));
+        }
+
+        return $data;
     }
 
     public function configureActions(): array
@@ -38,48 +70,62 @@ class WCDebug1CAjaxController extends Controller
             'init' => [
                 'prefilters' => [], 'postfilters' => [],
             ],
-            'prepareTmpDirectory' => [
+            'prepare' => [
                 'prefilters' => [], 'postfilters' => [],
             ],
         ];
     }
 
-    public function initAction(): void
+    public function processBeforeAction(Action $action): bool
     {
-        $request = Bitrix\Main\Context::getCurrent()->getRequest();
-        $protocol = $request->isHttps() ? "https://" : "http://";
-        $this->data = $request->toArray();
 
-        if ($this->data['TYPE_MODE'] && $dataType = Json::decode(htmlspecialcharsback($this->data['TYPE_MODE']))) {
-            $this->data = array_merge($this->data, $dataType);
-        } else {
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_MODE_NOT_SELECTED'));
+        if (!$this->createHttpClient()) {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
+            return false;
         }
-        $this->url = "$protocol{$_SERVER['SERVER_NAME']}/{$this->data['DIR']}/admin/1c_exchange.php";
 
-        if ($this->createHttpClient() && $this->modeCheckAuth()) {
-            $this->handler();
+        return true;
+    }
+
+    public function prepareAction(): void
+    {
+        if (!$this->class::prepareTmpDir()) {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_PREPARE_DIR_ERROR'));
+        }
+    }
+
+
+    public function initAction(): AjaxJson
+    {
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_URL', ['#URL#'=>$this->exchangeUrl]));
+
+        if ($this->modeCheckAuth()) {
+            $this->controller();
         }
 
         $this->add2log(Loc::getMessage('WC_DEBUG1C_DONE'));
+
+        return new AjaxJson();
     }
 
-    public function prepareTmpDirectoryAction(): string
+    private function modeCheckAuth(): bool
     {
-        $tmpDir = "{$_SERVER['DOCUMENT_ROOT']}$this->tmpDir";
+        $url = "$this->exchangeUrl?type={$this->data['type']}&mode=checkauth";
+        $get = $this->convertEncoding($this->httpClient->get($url));
 
-        if (!is_dir($tmpDir)) {
-            mkdir($tmpDir, 0777, true);
+        preg_match('/sessid=(?!")\K.*/', $get, $sessid);
+
+        if ($this->sessid = $sessid[0]) {
+            $this->httpClient->setHeader('X-Bitrix-Csrf-Token', $this->sessid, true);
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_SUCCESS'));
+            return true;
         }
 
-        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->logFile", '');
-        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->ordersFile", '');
-        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->infoFile", '');
-
-        return $this->logFile;
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_ERROR'));
+        return false;
     }
 
-    private function handler(): void
+    private function controller(): void
     {
         switch ($this->data['type']) {
             case 'catalog':
@@ -108,6 +154,7 @@ class WCDebug1CAjaxController extends Controller
 
                         break;
                     case 'query':
+                        $this->modeInit();
                         $this->modeQuery();
                         break;
                     case'info':
@@ -145,27 +192,11 @@ class WCDebug1CAjaxController extends Controller
         }
     }
 
-    private function modeCheckAuth(): bool
-    {
-        $url = "$this->url?type={$this->data['type']}&mode=checkauth";
-        $get = $this->convertEncoding($this->httpClient->get($url));
-
-        preg_match('/sessid=(?!")\K.*/', $get, $sessid);
-
-        if ($this->sessid = $sessid[0]) {
-            $this->httpClient->setHeader('X-Bitrix-Csrf-Token', $this->sessid, true);
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_SUCCESS'));
-            return true;
-        }
-
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_ERROR'));
-        return false;
-    }
 
     private function modeInit(): void
     {
         $version = $this->data['VERSION'] ? "version={$this->data['VERSION']}" : '';
-        $url = "$this->url?type={$this->data['type']}&mode=init&sessid=$this->sessid&$version";
+        $url = "$this->exchangeUrl?type={$this->data['type']}&mode=init&sessid=$this->sessid&$version";
 
         if ($init = $this->convertEncoding($this->httpClient->get($url))) {
             $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_INIT_SUCCESS'));
@@ -174,7 +205,7 @@ class WCDebug1CAjaxController extends Controller
 
     private function modeImport($file): void
     {
-        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&filename=$file";
+        $url = "$this->exchangeUrl?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&filename=$file";
         $get = $this->convertEncoding($this->httpClient->get($url));
 
         preg_match('/progress/', $get, $match);
@@ -188,30 +219,30 @@ class WCDebug1CAjaxController extends Controller
 
     private function modeQuery(): void
     {
-        $this->modeInit();
         $orderId = $this->data['QUERY_ORDER_ID'] ? "orderId={$this->data['QUERY_ORDER_ID']}" : '';
-        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&$orderId";
+        $url = "$this->exchangeUrl?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&$orderId";
         $get = $this->httpClient->get($url);
 
-        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->ordersFile", $get);
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->ordersFile]));
+        file_put_contents($this->class::getOrderFile(), $get);
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->class::getOrderFile(false)]));
     }
 
     private function modeInfo(): void
     {
-        $url = "$this->url?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid";
+        $url = "$this->exchangeUrl?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid";
         $get = $this->httpClient->get($url);
 
-        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->infoFile", $get);
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->infoFile]));
+        file_put_contents($this->class::getFileInfo(), $get);
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->class::getFileInfo(false)]));
     }
 
-    private function getImportFile($dir)
+    private function getImportFile($dir): ?string
     {
-        $files = scandir($_SERVER['DOCUMENT_ROOT'] . '/upload/' . $dir . '/', 1);
+        $files = scandir("{$_SERVER['DOCUMENT_ROOT']}/upload/$dir/", 1);
 
         foreach ($files as $file) {
-            $info = new SplFileInfo($file);
+            $info = new \SplFileInfo($file);
+
             if ($info->getExtension() === 'xml') {
                 return $file;
             }
@@ -226,7 +257,7 @@ class WCDebug1CAjaxController extends Controller
         $str = preg_replace("/[\\n]/", " ", $str);
         $this->log .= date('d.m.y H:i:s') . ": $str \n";
 
-        file_put_contents("{$_SERVER['DOCUMENT_ROOT']}$this->logFile", $this->log);
+        file_put_contents($this->logFile, $this->log);
     }
 
     private function convertEncoding($str): string
@@ -234,12 +265,13 @@ class WCDebug1CAjaxController extends Controller
         return mb_convert_encoding($str, 'UTF-8', 'windows-1251'); // todo в параметр
     }
 
+
     private function createHttpClient(): bool
     {
         $this->httpClient = new HttpClient();
         $unsignedParameters = $this->getUnsignedParameters();
         $this->httpClient->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
-        $this->httpClient->get($this->url);
+        $this->httpClient->get($this->exchangeUrl);
         $cookie = $this->httpClient->getCookies()->toArray();
 
         if ($cookie['PHPSESSID']) {
@@ -247,7 +279,6 @@ class WCDebug1CAjaxController extends Controller
             return true;
         }
 
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
         return false;
     }
 }
