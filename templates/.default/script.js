@@ -11,35 +11,40 @@ class WCDebug1C {
         }, this.handler.bind(this));
     }
 
-    async handler(e) {
+    handler(e) {
         BX.PreventDefault(e);
         BX.showWait();
 
-        await BX.ajax.runComponentAction('wc:debug1c', 'prepare', {mode: 'ajax'});
-        this.parse();
-
-        BX.ajax.runComponentAction('wc:debug1c', 'init', {
-            mode: 'ajax',
-            data: new FormData(e.target),
-            signedParameters: this.signedParameters,
+        BX.ajax.runComponentAction('wc:debug1c', 'prepare', {
+            mode: 'ajax'
         }).then((response) => {
-            BX.closeWait();
+            this.parseLogFile(); // Будет парсить пока не увидит в логе "debug completed"
+
+            BX.ajax.runComponentAction('wc:debug1c', 'init', {
+                mode: 'ajax',
+                data: new FormData(e.target),
+                signedParameters: this.signedParameters,
+            }).then(() => {
+                BX.closeWait();
+            });
         }, (response) => {
-            // все ошибки пишутся в лог
+            response.errors.forEach((error) => {
+                BX.closeWait();
+                console.error(error);
+            });
         });
     }
 
-    parse() {
+    parseLogFile() {
         BX.ajax({
             url: this.parameters.logFile,
             dataType: 'html',
             cache: false,
             onsuccess: (response) => {
-                console.log(response);
                 BX.adjust(this.log, {html: response});
                 if (response.search('debug completed') === -1) {
                     this.loopTimeout = setTimeout(() => {
-                        this.parse()
+                        this.parseLogFile()
                     }, 500);
                 } else {
                     clearTimeout(this.loopTimeout);

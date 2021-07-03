@@ -18,22 +18,13 @@ Loc::loadMessages(__DIR__ . '/class.php');
 
 class Debug1CAjaxController extends Controller
 {
-    private $tmpDir;
-    private $logFile;
-    private $ordersFile;
-    private $infoFile;
-    private $data;
-    private $url;
+    /** @var Debug1C $class */
+    private $class;
+    private $params;
     private $httpClient;
     private $sessid;
     private $log;
-
-    /** @var Debug1C $class */
-    private $class;
-    /**
-     * @var mixed
-     */
-    private $exchangeUrl;
+    private $logFile;
 
     public function __construct(Request $request = null)
     {
@@ -42,26 +33,7 @@ class Debug1CAjaxController extends Controller
         \Bitrix\Main\Loader::includeModule('sale');
 
         $this->class = \CBitrixComponent::includeComponentClass('wc:debug1c');
-        $this->data = $this->getData();
-        if ($this->data['EXCHANGE_URL']) {
-            $this->exchangeUrl = $this->class::getPathExchangeUrl(false, $this->data['EXCHANGE_URL']);
-        } else {
-            $this->exchangeUrl = $this->class::getPathExchangeUrl(false);
-        }
-        $this->logFile = $this->class::getLogFile();
-    }
-
-    private function getData(): array
-    {
-        $data = $this->request->toArray() ?: [];
-
-        if ($data['TYPE_MODE'] && $dataType = Json::decode(htmlspecialcharsback($data['TYPE_MODE']))) {
-            $data = array_merge($data, $dataType);
-        } else {
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_MODE_NOT_SELECTED'));
-        }
-
-        return $data;
+        $this->logFile = $this->class::getPathLogFile();
     }
 
     public function configureActions(): array
@@ -78,39 +50,98 @@ class Debug1CAjaxController extends Controller
 
     public function processBeforeAction(Action $action): bool
     {
+        switch ($action->getName()) {
+            case 'init':
+                if (!$this->params = $this->getParams()) {
+                    return false;
+                }
 
-        if (!$this->createHttpClient()) {
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
-            return false;
+                if (!$this->createHttpClient()) {
+                    $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
+                    return false;
+                }
+
+                break;
         }
 
         return true;
     }
 
-    public function prepareAction(): void
+    public function prepareAction(): AjaxJson
     {
+        $result = new Result();
+
         if (!$this->class::prepareTmpDir()) {
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_PREPARE_DIR_ERROR'));
+            $result->addError(new Error(Loc::getMessage('WC_DEBUG1C_PREPARE_DIR_ERROR')));
         }
+
+        $isSuccess = $result->isSuccess() ? AjaxJson::STATUS_SUCCESS : AjaxJson::STATUS_ERROR;
+
+        return new AjaxJson(null, $isSuccess, $result->getErrorCollection());
     }
 
-
-    public function initAction(): AjaxJson
+    public function initAction(): void
     {
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_URL', ['#URL#'=>$this->exchangeUrl]));
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_STARTED', ['#URL#' => $this->params['EXCHANGE_URL']]));
 
         if ($this->modeCheckAuth()) {
-            $this->controller();
+            $this->modeController();
         }
 
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_DONE'));
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_COMPLETED'));
+    }
 
-        return new AjaxJson();
+    private function getParams(): ?array
+    {
+        $params = $this->request->toArray() ?: [];
+
+        // TYPE_MODE
+        if ($params['TYPE_MODE'] && $dataType = Json::decode(htmlspecialcharsback($params['TYPE_MODE']))) {
+            $params = array_merge($params, $dataType);
+        } else {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_MODE_NOT_SELECTED'));
+            return null;
+        }
+
+        // EXCHANGE_URL
+        if ($exchangeUrl = $params['EXCHANGE_URL'] ?
+            $this->class::getExchangeUrl($params['EXCHANGE_URL']) : $this->class::getExchangeUrl()) {
+            $params['EXCHANGE_URL'] = $exchangeUrl;
+        } else {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_NOT_EXIST', ['#FILE#' => $params['EXCHANGE_URL']]));
+            return null;
+        }
+
+        return $params;
+    }
+
+    private function add2log($str): void
+    {
+        $str = preg_replace("/[\\n]/", " ", $str);
+        $this->log .= date('d.m.y H:i:s') . ": $str \n";
+
+        file_put_contents($this->logFile, $this->log);
+    }
+
+    private function createHttpClient(): bool
+    {
+        $this->httpClient = new HttpClient();
+        $unsignedParameters = $this->getUnsignedParameters();
+        $this->httpClient->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
+        $this->httpClient->get($this->params['EXCHANGE_URL']);
+        $cookie = $this->httpClient->getCookies()->toArray();
+
+        if ($cookie['PHPSESSID']) {
+            $this->httpClient->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
+            return true;
+        }
+
+        return false;
     }
 
     private function modeCheckAuth(): bool
     {
-        $url = "$this->exchangeUrl?type={$this->data['type']}&mode=checkauth";
+        $url = "{$this->params['EXCHANGE_URL']}?type={$this->params['TYPE']}&mode=checkauth";
         $get = $this->convertEncoding($this->httpClient->get($url));
 
         preg_match('/sessid=(?!")\K.*/', $get, $sessid);
@@ -122,14 +153,20 @@ class Debug1CAjaxController extends Controller
         }
 
         $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_ERROR'));
+
         return false;
     }
 
-    private function controller(): void
+    private function convertEncoding($str): string
     {
-        switch ($this->data['type']) {
+        return mb_convert_encoding($str, 'UTF-8', 'windows-1251'); // todo в параметр
+    }
+
+    private function modeController(): void
+    {
+        switch ($this->params['TYPE']) {
             case 'catalog':
-                switch ($this->data['mode']) {
+                switch ($this->params['MODE']) {
                     case 'import':
                         // $this->modeInit(); todo в параметр
                         if (!$file = $this->getImportFile('1c_catalog')) {
@@ -142,7 +179,7 @@ class Debug1CAjaxController extends Controller
                 }
                 break;
             case 'sale':
-                switch ($this->data['mode']) {
+                switch ($this->params['MODE']) {
                     case 'import':
                         // $this->modeInit(); todo в параметр
                         if (!$file = $this->getImportFile('1c_exchange')) {
@@ -151,7 +188,6 @@ class Debug1CAjaxController extends Controller
 
                         $this->add2log(Loc::getMessage('WC_DEBUG1C_IMPORTING_FILE', ['#FILE#' => $file]));
                         $this->modeImport($file);
-
                         break;
                     case 'query':
                         $this->modeInit();
@@ -163,19 +199,19 @@ class Debug1CAjaxController extends Controller
                     case'exchange-order':
                         $this->add2log(Loc::getMessage('WC_DEBUG1C_SEARCHING_ORDER'));
 
-                        if ($this->data['exchange-order-id'] > 0 && $order = Order::load($this->data['exchange-order-id'])) {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_FOUND', ['#ORDER_ID#' => $this->data['exchange-order-id']]));
+                        if ($this->params['EXCHANGE_ORDER_ID'] > 0 && $order = Order::load($this->params['EXCHANGE_ORDER_ID'])) {
+                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_FOUND', ['#ORDER_ID#' => $this->params['EXCHANGE_ORDER_ID']]));
                         } else {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_NOT_FOUND', ['#ORDER_ID#' => $this->data['exchange-order-id']]));
+                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_NOT_FOUND', ['#ORDER_ID#' => $this->params['EXCHANGE_ORDER_ID']]));
                             break;
                         }
 
                         $order->setField('UPDATED_1C', 'N');
 
                         if ($order->save()->isSuccess()) {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_MARKED', ['#ORDER_ID#' => $this->data['QUERY_ORDER_ID']]));
+                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_MARKED', ['#ORDER_ID#' => $this->params['QUERY_ORDER_ID']]));
                         } else {
-                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_NOT_UPDATED', ['#ORDER_ID#' => $this->data['QUERY_ORDER_ID']]));
+                            $this->add2log(Loc::getMessage('WC_DEBUG1C_ORDER_NOT_UPDATED', ['#ORDER_ID#' => $this->params['QUERY_ORDER_ID']]));
                             break;
                         }
                         break;
@@ -186,54 +222,11 @@ class Debug1CAjaxController extends Controller
                 if (!$file = $this->getImportFile('1c_highloadblock')) {
                     break;
                 }
+
                 $this->add2log(Loc::getMessage('WC_DEBUG1C_IMPORTING_FILE', ['#FILE#' => $file]));
                 $this->modeImport($file);
                 break;
         }
-    }
-
-
-    private function modeInit(): void
-    {
-        $version = $this->data['VERSION'] ? "version={$this->data['VERSION']}" : '';
-        $url = "$this->exchangeUrl?type={$this->data['type']}&mode=init&sessid=$this->sessid&$version";
-
-        if ($init = $this->convertEncoding($this->httpClient->get($url))) {
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_INIT_SUCCESS'));
-        }
-    }
-
-    private function modeImport($file): void
-    {
-        $url = "$this->exchangeUrl?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&filename=$file";
-        $get = $this->convertEncoding($this->httpClient->get($url));
-
-        preg_match('/progress/', $get, $match);
-
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_REPLACE', ['#REPLACE#' => $get]));
-
-        if ($match) {
-            $this->modeImport($file);
-        }
-    }
-
-    private function modeQuery(): void
-    {
-        $orderId = $this->data['QUERY_ORDER_ID'] ? "orderId={$this->data['QUERY_ORDER_ID']}" : '';
-        $url = "$this->exchangeUrl?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid&$orderId";
-        $get = $this->httpClient->get($url);
-
-        file_put_contents($this->class::getOrderFile(), $get);
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->class::getOrderFile(false)]));
-    }
-
-    private function modeInfo(): void
-    {
-        $url = "$this->exchangeUrl?type={$this->data['type']}&mode={$this->data['mode']}&sessid=$this->sessid";
-        $get = $this->httpClient->get($url);
-
-        file_put_contents($this->class::getFileInfo(), $get);
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->class::getFileInfo(false)]));
     }
 
     private function getImportFile($dir): ?string
@@ -249,36 +242,50 @@ class Debug1CAjaxController extends Controller
         }
 
         $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_NOT_FOUND'));
+
         return null;
     }
 
-    private function add2log($str): void
+    private function modeImport($file): void
     {
-        $str = preg_replace("/[\\n]/", " ", $str);
-        $this->log .= date('d.m.y H:i:s') . ": $str \n";
+        $url = "{$this->params['EXCHANGE_URL']}?type={$this->params['TYPE']}&mode={$this->params['MODE']}&sessid=$this->sessid&filename=$file";
+        $get = $this->convertEncoding($this->httpClient->get($url));
 
-        file_put_contents($this->logFile, $this->log);
-    }
+        preg_match('/progress/', $get, $match);
 
-    private function convertEncoding($str): string
-    {
-        return mb_convert_encoding($str, 'UTF-8', 'windows-1251'); // todo в параметр
-    }
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_REPLACE', ['#REPLACE#' => $get]));
 
-
-    private function createHttpClient(): bool
-    {
-        $this->httpClient = new HttpClient();
-        $unsignedParameters = $this->getUnsignedParameters();
-        $this->httpClient->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
-        $this->httpClient->get($this->exchangeUrl);
-        $cookie = $this->httpClient->getCookies()->toArray();
-
-        if ($cookie['PHPSESSID']) {
-            $this->httpClient->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
-            return true;
+        if ($match) {
+            $this->modeImport($file);
         }
+    }
 
-        return false;
+    private function modeInit(): void
+    {
+        $version = $this->params['VERSION'] ? "version={$this->params['VERSION']}" : '';
+        $url = "{$this->params['EXCHANGE_URL']}?type={$this->params['TYPE']}&mode=init&sessid=$this->sessid&$version";
+
+        if ($init = $this->convertEncoding($this->httpClient->get($url))) {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_INIT_SUCCESS'));
+        }
+    }
+
+    private function modeQuery(): void
+    {
+        $orderId = $this->params['QUERY_ORDER_ID'] ? "orderId={$this->params['QUERY_ORDER_ID']}" : '';
+        $url = "{$this->params['EXCHANGE_URL']}?type={$this->params['TYPE']}&mode={$this->params['MODE']}&sessid=$this->sessid&$orderId";
+        $get = $this->httpClient->get($url);
+
+        file_put_contents($this->class::getPathOrderFile(), $get);
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->class::getPathOrderFile(false)]));
+    }
+
+    private function modeInfo(): void
+    {
+        $url = "{$this->params['EXCHANGE_URL']}?type={$this->params['TYPE']}&mode={$this->params['MODE']}&sessid=$this->sessid";
+        $get = $this->httpClient->get($url);
+
+        file_put_contents($this->class::getPathFileInfo(), $get);
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_LINK', ['#FILE#' => $this->class::getPathFileInfo(false)]));
     }
 }

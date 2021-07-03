@@ -4,6 +4,7 @@
 namespace WC\Components;
 
 
+use Bitrix\Main\IO\File;
 use Bitrix\Main\Localization\Loc;
 
 class Debug1C extends \CBitrixComponent
@@ -15,14 +16,9 @@ class Debug1C extends \CBitrixComponent
         \CUtil::InitJSCore(['ajax']);
     }
 
-    protected function listKeysSignedParameters(): array
-    {
-        return ['PASSWORD', 'LOGIN'];
-    }
-
     public function onPrepareComponentParams($arParams): array
     {
-        $arParams['LOG_FILE'] = self::getLogFile(false);
+        $arParams['LOG_FILE'] = self::getPathLogFile(false);
 
         return $arParams;
     }
@@ -39,35 +35,29 @@ class Debug1C extends \CBitrixComponent
             if (!self::prepareTmpDir()) {
                 throw new \Bitrix\Main\SystemException(Loc::getMessage('WC_DEBUG1C_PREPARE_DIR_ERROR'));
             }
-        }
 
-        $this->includeComponentTemplate();
+            $this->includeComponentTemplate();
+        } else {
+            $this->includeComponentTemplate('template_auth');
+        }
     }
 
-    public static function prepareTmpDir(): bool
+    protected function listKeysSignedParameters(): array
     {
-        if (!is_dir($tmpDir = self::getPathTmpDir()) && !mkdir($tmpDir, 0777, true)) {
-            return false;
-        }
-
-        $files = [
-            'LOG' => self::getLogFile(),
-            'ORDER' => self::getOrderFile(),
-            'INFO' => self::getFileInfo(),
-        ];
-
-        foreach ($files as $file) {
-            if (file_put_contents($file, '') === false) {
-                return false;
-            }
-        }
-
-        return true;
+        return ['PASSWORD', 'LOGIN'];
     }
 
-    public static function getPathTmpDir($absolutePath = true): string
+    public static function getExchangeUrl($path = '/bitrix/admin/1c_exchange.php'): ?string
     {
-        return self::getPathBase($absolutePath, '/upload/tmp/debug1c');
+        if (!File::isFileExists(self::getPathBase(true, $path))){
+            return null;
+        }
+
+        $request = \Bitrix\Main\Context::getCurrent()->getRequest();
+        $path = self::getPathBase(false, $path);
+        $protocol = $request->isHttps() ? "https://" : "http://";
+
+        return "$protocol{$_SERVER['SERVER_NAME']}$path";
     }
 
     public static function getPathBase($absolutePath, $path): string
@@ -79,34 +69,51 @@ class Debug1C extends \CBitrixComponent
         return $path;
     }
 
-    private static function getFileBase($absolutePath, $name): string
+    public static function getPathLogFile($absolutePath = true): string
+    {
+        return self::getPathFileBase($absolutePath, 'log.txt');
+    }
+
+    public static function getPathTmpDir($absolutePath = true): string
+    {
+        return self::getPathBase($absolutePath, '/upload/tmp/debug1c');
+    }
+
+    public static function prepareTmpDir(): bool
+    {
+        if (!is_dir($tmpDir = self::getPathTmpDir()) && !mkdir($tmpDir, 0777, true)) {
+            return false;
+        }
+
+        $files = [
+            'LOG' => self::getPathLogFile(),
+            'ORDER' => self::getPathOrderFile(),
+            'INFO' => self::getPathFileInfo(),
+        ];
+
+        foreach ($files as $file) {
+            if (!File::isFileExists($file) || file_put_contents($file, '') === false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public static function getPathOrderFile($absolutePath = true): string
+    {
+        return self::getPathFileBase($absolutePath, 'order.xml');
+    }
+
+    public static function getPathFileInfo($absolutePath = true): string
+    {
+        return self::getPathFileBase($absolutePath, 'info.xml');
+    }
+
+    private static function getPathFileBase($absolutePath, $name): string
     {
         $tmpDirPath = self::getPathTmpDir($absolutePath);
 
         return "$tmpDirPath/$name";
-    }
-
-    public static function getLogFile($absolutePath = true): string
-    {
-        return self::getFileBase($absolutePath, 'log.txt');
-    }
-
-    public static function getOrderFile($absolutePath = true): string
-    {
-        return self::getFileBase($absolutePath, 'order.xml');
-    }
-
-    public static function getFileInfo($absolutePath = true): string
-    {
-        return self::getFileBase($absolutePath, 'info.xml');
-    }
-
-    public static function getPathExchangeUrl($absolutePath = true, $path = 'bitrix/admin/1c_exchange.php'): string
-    {
-        $request = \Bitrix\Main\Context::getCurrent()->getRequest();
-        $path = self::getPathBase($absolutePath, $path);
-        $protocol = $request->isHttps() ? "https://" : "http://";
-
-        return "$protocol{$_SERVER['SERVER_NAME']}/$path";
     }
 }
