@@ -81,7 +81,7 @@ class Debug1C extends \CBitrixComponent
 
     public static function prepareTmpDir(): bool
     {
-        if (!is_dir($tmpDir = self::getPathTmpDir()) && !mkdir($tmpDir, 0777, true)) {
+        if (!is_dir($tmpDir = self::getPathTmpDir()) && !mkdir($tmpDir, 0777, true) && !is_dir($tmpDir)) {
             return false;
         }
 
