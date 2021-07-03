@@ -57,7 +57,6 @@ class Debug1CAjaxController extends Controller
                 }
 
                 if (!$this->createHttpClient()) {
-                    $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
                     return false;
                 }
 
@@ -126,17 +125,31 @@ class Debug1CAjaxController extends Controller
     private function createHttpClient(): bool
     {
         $this->httpClient = new HttpClient();
+
         $unsignedParameters = $this->getUnsignedParameters();
+
+        if (!$unsignedParameters['LOGIN']){
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_EMPTY_PARAM', ['#PARAM#' => 'LOGIN']));
+            return false;
+        }
+        if (!$unsignedParameters['PASSWORD']){
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_EMPTY_PARAM', ['#PARAM#' => 'PASSWORD']));
+            return false;
+        }
+
         $this->httpClient->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
+
         $this->httpClient->get($this->params['EXCHANGE_URL']);
         $cookie = $this->httpClient->getCookies()->toArray();
 
-        if ($cookie['PHPSESSID']) {
-            $this->httpClient->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
-            return true;
+        if (!$cookie['PHPSESSID']) {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
+            return false;
         }
 
-        return false;
+        $this->httpClient->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
+
+        return true;
     }
 
     private function modeCheckAuth(): bool
