@@ -92,7 +92,7 @@ class Debug1C extends \CBitrixComponent
         ];
 
         foreach ($files as $file) {
-            if (!File::isFileExists($file) || file_put_contents($file, '') === false) {
+            if (file_put_contents($file, '') === false) {
                 return false;
             }
         }
