@@ -1,19 +1,19 @@
-.debug1c *{
-    all: revert ;
+.debug1c * {
+    all: revert !important;
 }
 
 .debug1c form td {
-    padding: 4px;
+    padding: 4px !important;
 }
 
 .debug1c form input[type='radio'], .debug1c form label, .debug1c form button {
-    cursor: pointer;
+    cursor: pointer !important;
 }
 
 .debug1c form button {
-    margin: 20px 0;
+    margin: 20px !important;
 }
 
 .debug1c form button:active {
-    background: #CCCCCC;
+    background: #CCCCCC !important;
 }
