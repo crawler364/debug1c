@@ -17,3 +17,8 @@
 .debug1c form button:active {
     background: #CCCCCC !important;
 }
+
+.debug1c .exchange-url {
+    width: 500px !important;
+    height: 30px !important;
+}

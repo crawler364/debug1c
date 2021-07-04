@@ -24,7 +24,7 @@ $this->setFrameMode(false);
                         </td>
                         <td>
                             <input type="text" name="EXCHANGE_URL" id="exchange-url"
-                                   placeholder='/bitrix/admin/1c_exchange.php'>
+                                   placeholder='/bitrix/admin/1c_exchange.php' class="exchange-url">
                         </td>
                     </tr>
                     <tr>
