@@ -18,20 +18,24 @@ class WCDebug1C {
         BX.ajax.runComponentAction('wc:debug1c', 'prepare', {
             mode: 'ajax'
         }).then((response) => {
+            console.log(response);
+
             this.parseLogFile(); // Будет парсить пока не увидит в логе "debug completed"
 
             BX.ajax.runComponentAction('wc:debug1c', 'init', {
                 mode: 'ajax',
                 data: new FormData(e.target),
                 signedParameters: this.signedParameters,
-            }).then(() => {
+            }).then((response) => {
+                console.log(response);
+                BX.closeWait();
+            }, (response) => {
+                console.log(response);
                 BX.closeWait();
             });
         }, (response) => {
-            response.errors.forEach((error) => {
-                BX.closeWait();
-                console.error(error);
-            });
+            console.log(response);
+            BX.closeWait();
         });
     }
 

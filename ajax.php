@@ -1,14 +1,14 @@
 <?php
 
+
 namespace WC\Components;
 
-use Bitrix\Main\Engine\Action;
+
 use Bitrix\Main\Engine\Controller;
-use Bitrix\Main\Engine\Response\AjaxJson;
 use Bitrix\Main\Error;
+use Bitrix\Main\Loader;
 use Bitrix\Main\Request;
 use Bitrix\Main\Localization\Loc;
-use Bitrix\Main\Result;
 use Bitrix\Main\Web\HttpClient;
 use Bitrix\Main\Web\Json;
 use Bitrix\Sale\Order;
@@ -30,7 +30,7 @@ class Debug1CAjaxController extends Controller
     {
         parent::__construct($request);
 
-        \Bitrix\Main\Loader::includeModule('sale');
+        Loader::includeModule('sale');
 
         $this->class = \CBitrixComponent::includeComponentClass('wc:debug1c');
         $this->logFile = $this->class::getPathLogFile();
@@ -48,46 +48,35 @@ class Debug1CAjaxController extends Controller
         ];
     }
 
-    public function processBeforeAction(Action $action): bool
+    public function prepareAction(): string
     {
-        switch ($action->getName()) {
-            case 'init':
-                if (!$this->params = $this->getParams()) {
-                    return false;
-                }
-
-                if (!$this->createHttpClient()) {
-                    return false;
-                }
-
-                break;
-        }
-
-        return true;
-    }
-
-    public function prepareAction(): AjaxJson
-    {
-        $result = new Result();
-
         if (!$this->class::prepareTmpDir()) {
-            $result->addError(new Error(Loc::getMessage('WC_DEBUG1C_PREPARE_DIR_ERROR')));
+            $this->addError(new Error(Loc::getMessage('WC_DEBUG1C_PREPARE_DIR_ERROR')));
         }
 
-        $isSuccess = $result->isSuccess() ? AjaxJson::STATUS_SUCCESS : AjaxJson::STATUS_ERROR;
-
-        return new AjaxJson(null, $isSuccess, $result->getErrorCollection());
+        return empty($this->getErrors()) ?
+            Loc::getMessage('WC_DEBUG1C_PREPARE_DIR_SUCCESS') : Loc::getMessage('WC_DEBUG1C_PREPARE_DIR_ERROR');
     }
 
-    public function initAction(): void
+    public function initAction(): string
     {
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_STARTED', ['#URL#' => $this->params['EXCHANGE_URL']]));
+        $this->add2log(Loc::getMessage('WC_DEBUG1C_STARTED'));
 
-        if ($this->modeCheckAuth()) {
+        $this->params = $this->getParams();
+        $this->httpClient = $this->createHttpClient();
+
+        if (empty($this->getErrors())) {
+            $this->modeCheckAuth();
+        }
+
+        if (empty($this->getErrors())) {
             $this->modeController();
         }
 
         $this->add2log(Loc::getMessage('WC_DEBUG1C_COMPLETED'));
+
+        return empty($this->getErrors()) ?
+            Loc::getMessage('WC_DEBUG1C_COMPLETED_SUCCESS') : Loc::getMessage('WC_DEBUG1C_COMPLETED_ERROR');
     }
 
     private function getParams(): ?array
@@ -98,20 +87,27 @@ class Debug1CAjaxController extends Controller
         if ($params['TYPE_MODE'] && $dataType = Json::decode(htmlspecialcharsback($params['TYPE_MODE']))) {
             $params = array_merge($params, $dataType);
         } else {
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_MODE_NOT_SELECTED'));
+            $this->add2logError(Loc::getMessage('WC_DEBUG1C_MODE_NOT_SELECTED'));
             return null;
         }
 
         // EXCHANGE_URL
         if ($exchangeUrl = $params['EXCHANGE_URL'] ?
             $this->class::getExchangeUrl($params['EXCHANGE_URL']) : $this->class::getExchangeUrl()) {
+            $this->add2log(Loc::getMessage('WC_DEBUG1C_EXCHANGE_URL', ['#URL#' => $exchangeUrl]));
             $params['EXCHANGE_URL'] = $exchangeUrl;
         } else {
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_NOT_EXIST', ['#FILE#' => $params['EXCHANGE_URL']]));
+            $this->add2logError(Loc::getMessage('WC_DEBUG1C_FILE_NOT_EXIST', ['#FILE#' => $params['EXCHANGE_URL']]));
             return null;
         }
 
         return $params;
+    }
+
+    private function add2logError($message): void
+    {
+        $this->addError(new Error($message));
+        $this->add2log($message);
     }
 
     private function add2log($str): void
@@ -122,34 +118,34 @@ class Debug1CAjaxController extends Controller
         file_put_contents($this->logFile, $this->log);
     }
 
-    private function createHttpClient(): bool
+    private function createHttpClient(): ?HttpClient
     {
-        $this->httpClient = new HttpClient();
+        $httpClient = new HttpClient();
 
         $unsignedParameters = $this->getUnsignedParameters();
 
-        if (!$unsignedParameters['LOGIN']){
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_EMPTY_PARAM', ['#PARAM#' => 'LOGIN']));
-            return false;
+        if (!$unsignedParameters['LOGIN']) {
+            $this->add2logError(Loc::getMessage('WC_DEBUG1C_EMPTY_PARAM', ['#PARAM#' => 'LOGIN']));
+            return null;
         }
-        if (!$unsignedParameters['PASSWORD']){
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_EMPTY_PARAM', ['#PARAM#' => 'PASSWORD']));
-            return false;
+        if (!$unsignedParameters['PASSWORD']) {
+            $this->add2logError(Loc::getMessage('WC_DEBUG1C_EMPTY_PARAM', ['#PARAM#' => 'PASSWORD']));
+            return null;
         }
 
-        $this->httpClient->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
+        $httpClient->setAuthorization($unsignedParameters['LOGIN'], $unsignedParameters['PASSWORD']);
 
-        $this->httpClient->get($this->params['EXCHANGE_URL']);
-        $cookie = $this->httpClient->getCookies()->toArray();
+        $httpClient->get($this->params['EXCHANGE_URL']);
+        $cookie = $httpClient->getCookies()->toArray();
 
         if (!$cookie['PHPSESSID']) {
-            $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
-            return false;
+            $this->add2logError(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'));
+            return null;
         }
 
-        $this->httpClient->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
+        $httpClient->setCookies(['PHPSESSID' => $cookie['PHPSESSID'], 'XDEBUG_SESSION' => 'PHPSTORM']); // todo в параметр
 
-        return true;
+        return $httpClient;
     }
 
     private function modeCheckAuth(): bool
@@ -165,7 +161,7 @@ class Debug1CAjaxController extends Controller
             return true;
         }
 
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_ERROR'));
+        $this->add2logError(Loc::getMessage('WC_DEBUG1C_HTTP_CLIENT_AUTH_ERROR'));
 
         return false;
     }
@@ -254,7 +250,7 @@ class Debug1CAjaxController extends Controller
             }
         }
 
-        $this->add2log(Loc::getMessage('WC_DEBUG1C_FILE_NOT_FOUND'));
+        $this->add2logError(Loc::getMessage('WC_DEBUG1C_FILE_NOT_FOUND'));
 
         return null;
     }
