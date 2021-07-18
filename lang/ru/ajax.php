@@ -15,5 +15,6 @@ $MESS['WC_DEBUG1C_MODE_NOT_SELECTED'] = "error - mode is not selected";
 $MESS['WC_DEBUG1C_FILE_NOT_EXIST'] = 'error - file does not exist "#FILE#"';
 $MESS['WC_DEBUG1C_HTTP_CLIENT_CREATE_ERROR'] = "error - failed to create http client";
 $MESS['WC_DEBUG1C_HTTP_CLIENT_AUTH_ERROR'] = "error - failed to auth http client";
-$MESS['WC_DEBUG1C_STARTED'] = '<b>debug started at URL "#URL#"</b>';
+$MESS['WC_DEBUG1C_STARTED'] = '<b>debug started</b>';
 $MESS['WC_DEBUG1C_EMPTY_PARAM'] = 'error - required parameter #PARAM# is empty';
+$MESS['WC_DEBUG1C_EXCHANGE_URL'] = 'exchange URL "#URL#"';
